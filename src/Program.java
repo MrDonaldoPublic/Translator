@@ -327,6 +327,9 @@ class Program {
      * @param word - String, word in dictionary
      */
     private void writeAllMeanings(String word) {
+        System.out.println("===MAIN MEANING===");
+        System.out.println(mainDict.get(word).toUpperCase());
+
         writeMeanings(nounDict, word, "Noun");
         writeMeanings(verbDict, word, "Verb");
         writeMeanings(adjDict, word, "Adjective");
@@ -498,6 +501,7 @@ class Program {
         Set<String> written = new TreeSet<>();
         int correct = 0;
         for (int i = 0; i < qty; ++i) {
+            System.out.print(i + ") ");
             String currWord = chooseWord(written, rand);
             int type = Integer.parseInt(currWord.substring(currWord.length() - 1));
             currWord = currWord.substring(0, currWord.length() - 1);
@@ -521,6 +525,10 @@ class Program {
             }
 
             String guestAns = removeWhiteSpaces(scanner.nextNoLineSeparate());
+            if (guestAns.equals("-")) {
+                qty = i;
+                break;
+            }
 
             switch (type) {
                 case 0:
