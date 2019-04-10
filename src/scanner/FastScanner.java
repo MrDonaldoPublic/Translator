@@ -86,7 +86,8 @@ public class FastScanner implements AutoCloseable {
 
             if (Character.DASH_PUNCTUATION == Character.getType(currChar)
                     || Character.isLetterOrDigit(currChar) || currChar == '\''
-                    || currChar == ' ' || currChar == '/') {
+                    || currChar == ' ' || currChar == '/' || currChar == '.'
+                    || currChar == '_') {
                 currStr.append(currChar);
             } else if (currStr.length() > 0) {
                 ++currPos;
