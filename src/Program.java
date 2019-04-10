@@ -553,6 +553,8 @@ class Program {
             if (!currDict.get(currWord).contains(guestAns)) {
                 System.out.println("Unfortunately, it's wrong answer");
                 System.out.println();
+                System.out.println("===MAIN MEANING===");
+                System.out.println(mainDict.get(currWord).toUpperCase());
                 writeMeanings(currDict, currWord, dictType);
                 System.out.println();
             } else {
