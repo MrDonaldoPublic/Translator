@@ -18,12 +18,14 @@ class Program {
     private List<String> adjWords = new ArrayList<>();
     private List<String> advWords = new ArrayList<>();
 
-    // allDictSize - size of all dictionaries
-    private int allDictSize;
+    // allDictSize - size of all dictionaries (exclude main)
     private BigInteger allDictSizeB;
 
     // users - list of logged in users
     private Map<String, List<Object>> users = new TreeMap<>();
+
+    // folder - name of folder including all dictionaries
+    private final String folder = "dict/";
 
     // username - String, name of current user.
     // If it's "Anonymous" then user hasn't registered and it doesn't changes rating
@@ -71,7 +73,7 @@ class Program {
      */
     private void initializeDictionary(Map<String, List<String>> dictionary, List<String> words, String fileName) {
         // try to connect to file "MainDictionary.ota" and initialize dictionary
-        try (FastScanner scanner = new FastScanner(new File(fileName))) {
+        try (FastScanner scanner = new FastScanner(new File(folder + fileName))) {
             // reading all words from file "MainDictionary.ota"
             while (scanner.hasNext()) {
                 // reading word
@@ -95,7 +97,7 @@ class Program {
             // all words and its descriptions are added in dictionary
         } catch (IOException e) {
             // attempt to connect the file was unsuccessful
-            System.err.println("File '" + fileName + "' not found.");
+            System.err.println("File '" + folder + fileName + "' not found.");
             e.printStackTrace();
             System.exit(0);
         }
@@ -110,7 +112,7 @@ class Program {
      * initializes all dictionaries: main, noun, verb, adjective, adverb
      */
     private void initializeDictionaries() {
-        try (FastScanner scanner = new FastScanner(new File("MainDictionary.ota"))) {
+        try (FastScanner scanner = new FastScanner(new File(folder + "/MainDictionary.ota"))) {
             // reading all words from file "MainDictionary.ota"
             while (scanner.hasNext()) {
                 // reading word
@@ -143,7 +145,8 @@ class Program {
         initializeDictionary(adjDict, adjWords, "AdjectiveDict.ota");
         initializeDictionary(advDict, advWords, "AdverbDict.ota");
 
-        allDictSize = nounDict.size() + verbDict.size() + adjDict.size() + advDict.size();
+        // allDictSize - size of all dictionaries
+        int allDictSize = nounDict.size() + verbDict.size() + adjDict.size() + advDict.size();
         allDictSizeB = new BigInteger(Integer.toString(allDictSize));
     }
 
@@ -579,7 +582,7 @@ class Program {
     }
 
     private void updateNotMain(Map<String, List<String>> dictionary, String fileName) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(new File(fileName)))) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(new File(folder + fileName)))) {
             for (Map.Entry<String, List<String>> entry : dictionary.entrySet()) {
                 writer.write(entry.getKey() + ": ");
 
@@ -590,14 +593,14 @@ class Program {
                 writer.newLine();
             }
         } catch (IOException e) {
-            System.err.println("Something gone wrong while updating file '" + fileName + "'");
+            System.err.println("Something gone wrong while updating file '" + folder + fileName + "'");
             e.printStackTrace();
             System.exit(0);
         }
     }
 
     private void updateFiles() {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(new File("MainDictionary.ota")))) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(new File(folder + "MainDictionary.ota")))) {
             for (Map.Entry<String, String> entry : mainDict.entrySet()) {
                 writer.write(entry.getKey() + ": " + entry.getValue());
                 writer.newLine();
