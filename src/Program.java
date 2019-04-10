@@ -622,9 +622,10 @@ class Program {
         updateNotMain(adjDict, "AdjectiveDict.ota");
         updateNotMain(advDict, "AdverbDict.ota");
 
-        if (!username.equals("Anonymous")) {
-            users.put(username, userStatistics);
+        if (username.equals("Anonymous")) {
+            Collections.fill(userStatistics, 0);
         }
+        users.put(username, userStatistics);
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(new File("Users.ota")))) {
             for (Map.Entry<String, List<Object>> entry : users.entrySet()) {
                 writer.write(entry.getKey() + ": ");
