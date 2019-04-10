@@ -70,8 +70,10 @@ public class FastScanner implements AutoCloseable {
             if (letterQty == -1) {
                 return null;
             }
-            if (Character.toString(currChar).equals(lineSeparate)) {
-                ++currPos;
+            if (lineSeparate.contains(Character.toString(currChar))) {
+                for (int i = 0; i < lineSeparate.length(); ++i) {
+                    ++currPos;
+                }
                 if (currStr.length() > 0) {
                     hasNextLine = true;
                     String res = currStr.toString();

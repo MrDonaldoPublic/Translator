@@ -21,6 +21,9 @@ class Program {
     // allDictSize - size of all dictionaries (exclude main)
     private BigInteger allDictSizeB;
 
+    // lineSeparate - String that
+    private final String lineSeparate = System.lineSeparator();
+
     // users - list of logged in users
     private Map<String, List<Object>> users = new TreeMap<>();
 
@@ -83,7 +86,7 @@ class Program {
                 List<String> descriptions = new ArrayList<>();
                 while (true) {
                     String currDescription = scanner.next();
-                    if (currDescription.equals(System.lineSeparator())) {
+                    if (lineSeparate.contains(currDescription)) {
                         break;
                     }
 
@@ -122,7 +125,7 @@ class Program {
                 String description = "";
                 while (scanner.hasNext()) {
                     String tmp = scanner.next();
-                    if (tmp.equals(System.lineSeparator())) {
+                    if (lineSeparate.contains(tmp)) {
                         break;
                     }
 
@@ -173,7 +176,7 @@ class Program {
                 List<Object> status = new ArrayList<>();
                 while (scanner.hasNext()) {
                     String currStatus = scanner.next();
-                    if (currStatus.equals(System.lineSeparator())) {
+                    if (lineSeparate.contains(currStatus)) {
                         break;
                     }
 
@@ -279,6 +282,9 @@ class Program {
         }
     }
 
+    /**
+     * writes current user's rating
+     */
     private void showRating() {
         if (username.equals("Anonymous")) {
             return;
