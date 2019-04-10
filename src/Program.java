@@ -1,6 +1,7 @@
-import FastScanner.FastScanner;
+import scanner.FastScanner;
 
 import java.io.*;
+import java.math.BigInteger;
 import java.util.*;
 
 class Program {
@@ -16,6 +17,10 @@ class Program {
     private List<String> verbWords = new ArrayList<>();
     private List<String> adjWords = new ArrayList<>();
     private List<String> advWords = new ArrayList<>();
+
+    // allDictSize - size of all dictionaries
+    private int allDictSize;
+    private BigInteger allDictSizeB;
 
     // users - list of logged in users
     private Map<String, List<Object>> users = new TreeMap<>();
@@ -137,6 +142,9 @@ class Program {
         initializeDictionary(verbDict, verbWords, "VerbDict.ota");
         initializeDictionary(adjDict, adjWords, "AdjectiveDict.ota");
         initializeDictionary(advDict, advWords, "AdverbDict.ota");
+
+        allDictSize = nounDict.size() + verbDict.size() + adjDict.size() + advDict.size();
+        allDictSizeB = new BigInteger(Integer.toString(allDictSize));
     }
 
     /**
@@ -196,7 +204,7 @@ class Program {
      * @param scanner - may be onlineScanner?
      * @return 'true' if user types 'y' or 'yes'
      * 'false' if user types 'n' or 'no'
-     * @throws IOException (in case that FastScanner could be broken)
+     * @throws IOException (in case that scanner could be broken)
      */
     private boolean positiveAnswer(FastScanner scanner) throws IOException {
         System.out.println("(y or n)");
@@ -229,6 +237,8 @@ class Program {
         try {
             if (!positiveAnswer(onlineScanner)) {
                 username = "Anonymous";
+                userStatistics = users.get(username);
+                welcomeToMyProgram(username, -1);
                 return;
             }
 
@@ -296,7 +306,7 @@ class Program {
         if (grade < 0) {
             System.out.println("You are beginner, not participated in quiz mode");
         } else {
-            System.out.println("Your rating is " + Integer.toString((int) Math.ceil(grade * 3800)));
+            System.out.println("Your rating is " + (int) Math.ceil(grade * 3800));
         }
         System.out.println("There are " + mainDict.size() + " words in dictionary");
     }
@@ -336,13 +346,32 @@ class Program {
         writeMeanings(advDict, word, "Adverb");
     }
 
+    private void help() {
+        System.out.println("    case -: stop running this program");
+        System.out.println("    case /q <number>: move to quiz mode");
+        System.out.println("    case /l <number>: move to list mode");
+    }
+
+    /**
+     * Casts number to int from String
+     *
+     * @param number - String with whitespace in first pos
+     * @return number casted to int or -1 if there is not number
+     */
+    private int getNumber(String number) {
+        try {
+            BigInteger res = new BigInteger(number.substring(1));
+            res = res.min(allDictSizeB);
+            return Integer.parseInt(res.toString());
+        } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
+            System.out.println("Please input a number");
+            return -1;
+        }
+    }
+
     private void waitForQuery() {
         System.out.println("Write something to contact with this program");
-        System.out.println("    case positive number: move to quiz mode with respective quantity of questions");
-        System.out.println("    case negative number: move to list mode with respective quantity of words");
-        System.out.println("    case -: stop running this program");
-        System.out.println("    case ': move to quiz mode");
-        System.out.println("    case .: move to list mode");
+        help();
 
         try {
             boolean haveToRead = true;
@@ -350,41 +379,37 @@ class Program {
                 System.out.println("Please send query");
 
                 String query = removeWhiteSpaces(onlineScanner.nextNoLineSeparate());
-                boolean isNumber = true;
-                int minusQty = 0, digitQty = 0;
-                for (int i = 0; i < query.length(); ++i) {
-                    if (query.charAt(i) != '-' && !Character.isDigit(query.charAt(i))) {
-                        isNumber = false;
-                    }
-                    if (query.charAt(i) == '-') {
-                        ++minusQty;
-                    }
-                    if (Character.isDigit(query.charAt(i))) {
-                        ++digitQty;
-                    }
+                int pos = 0;
+                while (pos < query.length() && query.charAt(pos) != ' ') {
+                    ++pos;
                 }
+                String first = query.substring(0, pos);
 
-                if (isNumber && digitQty > 0) {
-                    if (query.startsWith("-") && minusQty == 1) {
-                        writeListMode(onlineScanner, -Integer.parseInt(query));
-                    } else {
-                        quizMode(onlineScanner, Integer.parseInt(query));
-                    }
-                    continue;
-                }
-
-                switch (query) {
+                int qty;
+                switch (first) {
                     case "-":
                         haveToRead = false;
                         break;
-                    case "'":
-                        quizMode(onlineScanner, -1);
+                    case "/q":
+                    case "/quiz":
+                        qty = getNumber(query.substring(pos));
+                        if (qty > -1)
+                            quizMode(onlineScanner, qty, false);
                         break;
-                    case ".":
-                        writeListMode(onlineScanner, -1);
+                    case "/l":
+                    case "/list":
+                        qty = getNumber(query.substring(pos));
+                        if (qty > -1)
+                            quizMode(onlineScanner, qty, true);
+                        break;
+                    case "/h":
+                    case "/help":
+                        help();
                         break;
                     default:
-                        if (mainDict.get(query) == null) {
+                        if (query.startsWith("/")) {
+                            System.out.println("Unknown command");
+                        } else if (mainDict.get(query) == null) {
                             addMode(query, onlineScanner);
                         } else {
                             writeAllMeanings(query);
@@ -467,61 +492,47 @@ class Program {
         return word;
     }
 
-    private int readInteger(FastScanner scanner) throws IOException {
-        System.out.println("Input quantity of words you want to guess");
-        System.out.println("You can input number not bigger than " + mainDict.size());
-
-        int qty = 0;
-        boolean integer = false;
-        while (!integer) {
-            try {
-                qty = Integer.parseInt(scanner.nextNoLineSeparate());
-                if (qty <= 0) {
-                    System.err.println("Please input positive value");
-                } else {
-                    integer = true;
-                }
-            } catch (NumberFormatException e) {
-                System.err.println("Input a number");
-            }
-        }
-
-        return qty;
-    }
-
-    private void quizMode(FastScanner scanner, int guestQty) throws IOException {
-        int qty;
-        if (guestQty == -1) {
-            qty = readInteger(scanner);
-        } else {
-            qty = guestQty;
-        }
-
+    private void quizMode(FastScanner scanner, int qty, boolean list) throws IOException {
         Random rand = new Random();
         Set<String> written = new TreeSet<>();
         int correct = 0;
-        for (int i = 0; i < qty; ++i) {
+        System.out.println(qty + " words would be written");
+
+        for (int i = 1; i <= qty; ++i) {
             System.out.print(i + ") ");
             String currWord = chooseWord(written, rand);
             int type = Integer.parseInt(currWord.substring(currWord.length() - 1));
             currWord = currWord.substring(0, currWord.length() - 1);
 
+            Map<String, List<String>> currDict = new TreeMap<>();
+            String dictType = "";
             switch (type) {
                 case 0:
                     System.out.println(currWord + " as noun");
+                    currDict = nounDict;
+                    dictType = "Noun";
                     break;
                 case 1:
                     System.out.println(currWord + " as verb");
+                    currDict = verbDict;
+                    dictType = "Verb";
                     break;
                 case 2:
                     System.out.println(currWord + " as adjective");
+                    currDict = adjDict;
+                    dictType = "Adjective";
                     break;
                 case 3:
                     System.out.println(currWord + " as adverb");
+                    currDict = advDict;
+                    dictType = "Adverb";
                     break;
                 default:
                     System.err.println("expected 0..3, found another for random: " + type);
                     System.exit(0);
+            }
+            if (list) {
+                continue;
             }
 
             String guestAns = removeWhiteSpaces(scanner.nextNoLineSeparate());
@@ -530,115 +541,41 @@ class Program {
                 break;
             }
 
-            switch (type) {
-                case 0:
-                    if (!nounDict.get(currWord).contains(guestAns)) {
-                        System.out.println("Unfortunately, it's wrong answer");
-                        System.out.println();
-                        writeMeanings(nounDict, currWord, "Noun");
-                        System.out.println();
-                    } else {
-                        System.out.println("Yes");
-                        ++correct;
-                        System.out.println();
-                    }
-                    break;
-                case 1:
-                    if (!verbDict.get(currWord).contains(guestAns)) {
-                        System.out.println("Unfortunately, it's wrong answer");
-                        System.out.println();
-                        writeMeanings(verbDict, currWord, "Verb");
-                        System.out.println();
-                    } else {
-                        System.out.println("Yes");
-                        ++correct;
-                        System.out.println();
-                    }
-                    break;
-                case 2:
-                    if (!adjDict.get(currWord).contains(guestAns)) {
-                        System.out.println("Unfortunately, it's wrong answer");
-                        System.out.println();
-                        writeMeanings(adjDict, currWord, "Adjective");
-                        System.out.println();
-                    } else {
-                        System.out.println("Yes");
-                        ++correct;
-                        System.out.println();
-                    }
-                    break;
-                case 3:
-                    if (!advDict.get(currWord).contains(guestAns)) {
-                        System.out.println("Unfortunately, it's wrong answer");
-                        System.out.println();
-                        writeMeanings(advDict, currWord, "Adverb");
-                        System.out.println();
-                    } else {
-                        System.out.println("Yes");
-                        ++correct;
-                        System.out.println();
-                    }
-                    break;
-                default:
-                    System.err.println("expected 0..3, found another for random: " + type);
-                    System.exit(0);
+            if (!currDict.get(currWord).contains(guestAns)) {
+                System.out.println("Unfortunately, it's wrong answer");
+                System.out.println();
+                writeMeanings(currDict, currWord, dictType);
+                System.out.println();
+            } else {
+                System.out.println("Yes");
+                ++correct;
+                System.out.println();
             }
         }
 
-        System.out.println(Integer.toString(correct) + " correct / " + Integer.toString(qty) + " total");
+        if (list) {
+            System.out.println();
+            return;
+        }
+
+        System.out.println(correct + " correct / " + qty + " total");
         int prevCorrect = (int) userStatistics.get(0), prevTotal = (int) userStatistics.get(1);
         int currCorrect = prevCorrect + correct, currTotal = prevTotal + qty;
         userStatistics.set(0, currCorrect);
         userStatistics.set(1, currTotal);
 
-        double percentage = (double) correct / qty * 100;
-        System.out.println("It's about " + Double.toString(percentage) + "%");
+        System.out.format("It's about %.2f%%%n", correct * 100.0 / qty);
 
         int prevRating = (int) Math.ceil((double) prevCorrect / prevTotal * 3800);
         int currRating = (int) Math.ceil((double) currCorrect / currTotal * 3800);
-        if (prevRating < currRating) {
-            System.out.println("You got +" + Integer.toString(currRating - prevRating) + " to your rating!");
+        if (prevRating > currRating) {
+            System.out.println("You got " + (currRating - prevRating) + " to your rating...");
         } else {
-            System.out.println("You got " + Integer.toString(currRating - prevRating) + " to your rating...");
+            System.out.println("You got +" + (currRating - prevRating) + " to your rating!");
         }
-        System.out.println(Integer.toString(prevRating) + " -> " + Integer.toString(currRating));
+        System.out.println(prevRating + " -> " + currRating);
         showRating();
         System.out.println();
-    }
-
-    private void writeListMode(FastScanner scanner, int guestQty) throws IOException {
-        int qty;
-        if (guestQty == -1) {
-            qty = readInteger(scanner);
-        } else {
-            qty = guestQty;
-        }
-
-        Set<String> written = new TreeSet<>();
-        Random rand = new Random();
-        for (int i = 0; i < qty; ++i) {
-            String currWord = chooseWord(written, rand);
-            int type = Integer.parseInt(currWord.substring(currWord.length() - 1));
-            currWord = currWord.substring(0, currWord.length() - 1);
-
-            switch (type) {
-                case 0:
-                    System.out.println(currWord + " as noun");
-                    break;
-                case 1:
-                    System.out.println(currWord + " as verb");
-                    break;
-                case 2:
-                    System.out.println(currWord + " as adjective");
-                    break;
-                case 3:
-                    System.out.println(currWord + " as adverb");
-                    break;
-                default:
-                    System.err.println("expected 0..3, found another for random: " + type);
-                    System.exit(0);
-            }
-        }
     }
 
     private void updateNotMain(Map<String, List<String>> dictionary, String fileName) {

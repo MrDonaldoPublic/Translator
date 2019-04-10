@@ -1,4 +1,4 @@
-package FastScanner;
+package scanner;
 
 import java.io.*;
 
@@ -83,9 +83,8 @@ public class FastScanner implements AutoCloseable {
             }
 
             if (Character.DASH_PUNCTUATION == Character.getType(currChar)
-                    || Character.isLetter(currChar) || currChar == '\''
-                    || currChar == ' ' || currChar == '.'
-                    || Character.isDigit(currChar)) {
+                    || Character.isLetterOrDigit(currChar) || currChar == '\''
+                    || currChar == ' ' || currChar == '/') {
                 currStr.append(currChar);
             } else if (currStr.length() > 0) {
                 ++currPos;
