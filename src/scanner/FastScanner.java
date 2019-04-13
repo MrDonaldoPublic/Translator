@@ -1,6 +1,7 @@
 package scanner;
 
 import java.io.*;
+import java.util.List;
 
 public class FastScanner implements AutoCloseable {
     // for blockRead
@@ -16,6 +17,9 @@ public class FastScanner implements AutoCloseable {
 
     // for fast return value
     private String nextStr;
+
+    // for matching part of word
+    private List<Character> patterns = List.of('\'', '.', '_', '/', '+', '~');
 
     public FastScanner() {
         this.input = System.in;
@@ -85,9 +89,7 @@ public class FastScanner implements AutoCloseable {
             }
 
             if (Character.DASH_PUNCTUATION == Character.getType(currChar)
-                    || Character.isLetterOrDigit(currChar) || currChar == '\''
-                    || currChar == ' ' || currChar == '/' || currChar == '.'
-                    || currChar == '_') {
+                    || Character.isLetterOrDigit(currChar) || patterns.contains(currChar)) {
                 currStr.append(currChar);
             } else if (currStr.length() > 0) {
                 ++currPos;
