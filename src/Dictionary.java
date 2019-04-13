@@ -50,6 +50,7 @@ public class Dictionary {
 
     public void put(String key, List<String> value) {
         dict.put(key, value);
+        words.add(key);
     }
 
     public String getType() {
@@ -64,20 +65,12 @@ public class Dictionary {
         return dict.get(word);
     }
 
-    public String getFirst() {
-        return dict.entrySet().iterator().next().getValue().get(0);
-    }
-
     public List<String> remove(String word) {
         return dict.remove(word);
     }
 
     public List<String> getWords() {
         return words;
-    }
-
-    public Set<Map.Entry<String, List<String>>> entrySet() {
-        return dict.entrySet();
     }
 
     public void update(File f) {

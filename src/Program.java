@@ -16,7 +16,7 @@ class Program {
     private Dictionary[] dictionaries = new Dictionary[DICT_QTY];
 
     // dictNames - mapping from name to position in dictionaries
-    private Map<String, Integer> dictNames = new TreeMap<>();
+    private final Map<String, Integer> dictNames = new TreeMap<>();
 
     // DICT_QTY - quantity of dictionaries (dictionaries size)
     private static final int DICT_QTY = 5;
@@ -41,12 +41,12 @@ class Program {
 
     // onlineScanner - scanner with System.in input stream
     // interact with user
-    private FastScanner onlineScanner = new FastScanner();
+    private final FastScanner onlineScanner = new FastScanner();
 
     // ranking and naming - pair of arrays needed to name current rating
-    private double[] ranking = {1200.0 / 3800.0, 1400.0 / 3800.0, 1600.0 / 3800.0, 1900.0 / 3800.0,
+    private final double[] ranking = {1200.0 / 3800.0, 1400.0 / 3800.0, 1600.0 / 3800.0, 1900.0 / 3800.0,
             2200.0 / 3800.0, 2600.0 / 3800.0, 2900.0 / 3800.0, 3300.0 / 3800.0, 3600.0 / 3800.0};
-    private String[] naming = {"Newbie", "Pupil", "Specialist", "Expert",
+    private final String[] naming = {"Newbie", "Pupil", "Specialist", "Expert",
             "Candidate master", "Master", "International master", "Grandmaster", "International grandmaster", "Legendary grandmaster"};
 
     /**
@@ -64,10 +64,6 @@ class Program {
             dictNames.put(currName, i);
             dictNames.put(reduce(currName), i);
         }
-
-        // allDictSize - size of all dictionaries
-        int allDictSize = noun.size() + verb.size() + adj.size() + adv.size();
-        allDictSizeB = new BigInteger(Integer.toString(allDictSize));
     }
 
     /**
@@ -328,6 +324,10 @@ class Program {
         try {
             boolean haveToRead = true;
             while (haveToRead && onlineScanner.hasNext()) {
+                // allDictSize - size of all dictionaries
+                int allDictSize = noun.size() + verb.size() + adj.size() + adv.size();
+                allDictSizeB = new BigInteger(Integer.toString(allDictSize));
+
                 System.out.println("Please send query");
 
                 String query = onlineScanner.nextNoLineSeparate().trim();
@@ -652,28 +652,21 @@ class Program {
         }
     }
 
-    private String chooseWord(Set<String> written, Random rand) {
-        int type;
-        String word;
-        do {
-            type = rand.nextInt(4) + 1;
-            word = dictionaries[type].getWords().get(rand.nextInt(dictionaries[type].size())) + " " + type;
-        } while (written.contains(word));
-
-        written.add(word);
-
-        return word;
-    }
-
     private void quizMode(int qty) {
-        Random rand = new Random();
-        Set<String> written = new TreeSet<>();
+        List<String> words = new ArrayList<>();
+        for (int num = 1; num < DICT_QTY; ++num) {
+            for (String elem : dictionaries[num].getWords()) {
+                words.add(elem + " " + num);
+            }
+        }
+        Collections.shuffle(words);
+
         int correct = 0;
         System.out.println(qty + " words would be written");
 
         for (int i = 1; i <= qty; ++i) {
             System.out.print(i + ") ");
-            String currWord = chooseWord(written, rand);
+            String currWord = words.remove(i - 1);
             int pos = getLastWordPos(currWord);
             int type = Integer.parseInt(currWord.substring(pos).trim());
             currWord = currWord.substring(0, pos);
@@ -722,11 +715,11 @@ class Program {
     }
 
     private void listMode(int qty) {
-        List<String> words = main.getWords();
-        Random random = new Random();
+        qty = Math.min(qty, main.size());
+        List<String> words = new ArrayList<>(List.copyOf(main.getWords()));
+        Collections.shuffle(words);
         for (int i = 0; i < qty; ++i) {
-            String currWord = words.remove(random.nextInt(words.size()));
-            System.out.println((i + 1) + ") " + currWord);
+            System.out.println((i + 1) + ") " + words.get(i));
         }
     }
 
