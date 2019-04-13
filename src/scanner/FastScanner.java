@@ -19,7 +19,7 @@ public class FastScanner implements AutoCloseable {
     private String nextStr;
 
     // for matching part of word
-    private List<Character> patterns = List.of('\'', '.', '_', '/', '+', '~');
+    private List<Character> patterns = List.of('\'', ' ', '\t', '.', '_', '/', '+', '~');
 
     public FastScanner() {
         this.input = System.in;
