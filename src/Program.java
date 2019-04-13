@@ -1,4 +1,3 @@
-import jdk.swing.interop.SwingInterOpUtils;
 import scanner.FastScanner;
 
 import java.io.*;
@@ -7,17 +6,20 @@ import java.util.*;
 
 class Program {
     // dictionary - pair of word and it meanings
-    private Map<String, String> mainDict = new TreeMap<>();
-    private Map<String, List<String>> nounDict = new TreeMap<>();
-    private Map<String, List<String>> verbDict = new TreeMap<>();
-    private Map<String, List<String>> adjDict = new TreeMap<>();
-    private Map<String, List<String>> advDict = new TreeMap<>();
+    private Dictionary main;
+    private Dictionary noun;
+    private Dictionary verb;
+    private Dictionary adj;
+    private Dictionary adv;
 
-    // words - list of all words have in dictionary
-    private List<String> nounWords = new ArrayList<>();
-    private List<String> verbWords = new ArrayList<>();
-    private List<String> adjWords = new ArrayList<>();
-    private List<String> advWords = new ArrayList<>();
+    // dictionaries - array of all dictionaries
+    private Dictionary[] dictionaries = new Dictionary[DICT_QTY];
+
+    // dictNames - mapping from name to position in dictionaries
+    private Map<String, Integer> dictNames = new TreeMap<>();
+
+    // DICT_QTY - quantity of dictionaries (dictionaries size)
+    private static final int DICT_QTY = 5;
 
     // allDictSize - size of all dictionaries (exclude main)
     private BigInteger allDictSizeB;
@@ -28,8 +30,8 @@ class Program {
     // users - list of logged in users
     private Map<String, List<Object>> users = new TreeMap<>();
 
-    // folder - name of folder including all dictionaries
-    private final String folder = "dict/";
+    // direction - name of direction including all dictionaries
+    private final String direction = "dict/";
 
     // username - String, name of current user.
     // If it's "Anonymous" then user hasn't registered and it doesn't changes rating
@@ -47,116 +49,24 @@ class Program {
     private String[] naming = {"Newbie", "Pupil", "Specialist", "Expert",
             "Candidate master", "Master", "International master", "Grandmaster", "International grandmaster", "Legendary grandmaster"};
 
-
-    /**
-     * Removes whitespaces from prefix and suffix like trim() in js
-     *
-     * @param s = String
-     * @return s without whitespaces in prefix and suffix
-     */
-    private String removeWhiteSpaces(String s) {
-        int leftPos = 0;
-        while (leftPos < s.length() && Character.isWhitespace(s.charAt(leftPos))) {
-            ++leftPos;
-        }
-        int rightPos = s.length() - 1;
-        while (rightPos > -1 && Character.isWhitespace(s.charAt(rightPos))) {
-            --rightPos;
-        }
-        ++rightPos;
-
-        if (leftPos >= rightPos) {
-            return "";
-        } else {
-            return s.substring(leftPos, rightPos);
-        }
-    }
-
-    /**
-     * reads all words in file "fileName"
-     * and initialize dictionary to be get ready of adding new words
-     * or write words and they descriptions
-     *
-     * @param dictionary - one of four: noun, verb, adjective, adverb; type: Map<Str, List<Str>>
-     * @param words      - one of four: noun, verb, adjective, adverb; type: List<Str>
-     * @param fileName   - one of four: Noun, Verb, Adjective, Adverb + 'Dict.ota'
-     */
-    private void initializeDictionary(Map<String, List<String>> dictionary, List<String> words, String fileName) {
-        // try to connect to file "MainDictionary.ota" and initialize dictionary
-        try (FastScanner scanner = new FastScanner(new File(folder + fileName))) {
-            // reading all words from file "MainDictionary.ota"
-            while (scanner.hasNext()) {
-                // reading word
-                String currWord = scanner.next();
-
-                // reading some descriptions for the word
-                List<String> descriptions = new ArrayList<>();
-                while (true) {
-                    String currDescription = scanner.next();
-                    if (lineSeparate.contains(currDescription)) {
-                        break;
-                    }
-
-                    descriptions.add(removeWhiteSpaces(currDescription));
-                }
-                // read all descriptions for the word
-
-                // adding word and its descriptions in dictionary
-                dictionary.put(currWord, descriptions);
-            }
-            // all words and its descriptions are added in dictionary
-        } catch (IOException e) {
-            // attempt to connect the file was unsuccessful
-            System.err.println("File '" + folder + fileName + "' not found.");
-            e.printStackTrace();
-            System.exit(0);
-        }
-
-        // initialize list of words
-        for (Map.Entry<String, List<String>> entry : dictionary.entrySet()) {
-            words.add(entry.getKey());
-        }
-    }
-
     /**
      * initializes all dictionaries: main, noun, verb, adjective, adverb
      */
     private void initializeDictionaries() {
-        try (FastScanner scanner = new FastScanner(new File(folder + "/MainDictionary.ota"))) {
-            // reading all words from file "MainDictionary.ota"
-            while (scanner.hasNext()) {
-                // reading word
-                String currWord = scanner.next();
+        dictionaries[0] = main = new Dictionary(new File(direction + "MainDictionary.ota"), "main");
+        dictionaries[1] = noun = new Dictionary(new File(direction + "NounDict.ota"), "noun");
+        dictionaries[2] = verb = new Dictionary(new File(direction + "VerbDict.ota"), "verb");
+        dictionaries[3] = adj = new Dictionary(new File(direction + "AdjectiveDict.ota"), "adjective");
+        dictionaries[4] = adv = new Dictionary(new File(direction + "AdverbDict.ota"), "adverb");
 
-                // reading some descriptions for the word
-                String description = "";
-                while (scanner.hasNext()) {
-                    String tmp = scanner.next();
-                    if (lineSeparate.contains(tmp)) {
-                        break;
-                    }
-
-                    description = tmp;
-                }
-
-                // adding word and it description in dictionary
-                mainDict.put(currWord, removeWhiteSpaces(description));
-            }
-            // all words and its descriptions are added in dictionary
-        } catch (IOException e) {
-            // attempt to connect the file was unsuccessful
-            System.err.println("File 'MainDictionary.ota' not found.");
-            e.printStackTrace();
-            System.exit(0);
+        for (int i = 0; i < DICT_QTY; ++i) {
+            String currName = dictionaries[i].getType();
+            dictNames.put(currName, i);
+            dictNames.put(reduce(currName), i);
         }
 
-        initializeDictionary(nounDict, nounWords, "NounDict.ota");
-        initializeDictionary(verbDict, verbWords, "VerbDict.ota");
-        initializeDictionary(adjDict, adjWords, "AdjectiveDict.ota");
-        initializeDictionary(advDict, advWords, "AdverbDict.ota");
-
         // allDictSize - size of all dictionaries
-        int allDictSize = nounDict.size() + verbDict.size() + adjDict.size() + advDict.size();
+        int allDictSize = noun.size() + verb.size() + adj.size() + adv.size();
         allDictSizeB = new BigInteger(Integer.toString(allDictSize));
     }
 
@@ -179,7 +89,7 @@ class Program {
     private void readUsers() {
         try (FastScanner scanner = new FastScanner(new File("Users.ota"))) {
             while (scanner.hasNext()) {
-                String user = removeWhiteSpaces(scanner.next());
+                String user = scanner.next().trim();
                 List<Object> status = new ArrayList<>();
                 while (scanner.hasNext()) {
                     String currStatus = scanner.next();
@@ -187,7 +97,7 @@ class Program {
                         break;
                     }
 
-                    currStatus = removeWhiteSpaces(currStatus);
+                    currStatus = currStatus.trim();
                     boolean isNumber = true;
                     for (int i = 0; i < currStatus.length(); ++i) {
                         if (!(Character.isDigit(currStatus.charAt(i)) || currStatus.charAt(i) == '-')) {
@@ -214,15 +124,14 @@ class Program {
     /**
      * uses when program want answer from user: positive or negative
      *
-     * @param scanner - may be onlineScanner?
      * @return 'true' if user types 'y' or 'yes'
      * 'false' if user types 'n' or 'no'
      * @throws IOException (in case that scanner could be broken)
      */
-    private boolean positiveAnswer(FastScanner scanner) throws IOException {
+    private boolean positiveAnswer() throws IOException {
         System.out.println("(y or n)");
         while (true) {
-            String guestAns = removeWhiteSpaces(scanner.nextNoLineSeparate()).toLowerCase();
+            String guestAns = onlineScanner.nextNoLineSeparate().trim().toLowerCase();
             switch (guestAns) {
                 case "y":
                 case "yes":
@@ -248,7 +157,7 @@ class Program {
 
         System.out.println("Would you like to save your rating (log in)?");
         try {
-            if (!positiveAnswer(onlineScanner)) {
+            if (!positiveAnswer()) {
                 username = "Anonymous";
                 userStatistics = users.get(username);
                 welcomeToMyProgram(username, -1);
@@ -256,7 +165,7 @@ class Program {
             }
 
             System.out.println("Please write your name:");
-            username = removeWhiteSpaces(onlineScanner.nextNoLineSeparate()).toLowerCase();
+            username = onlineScanner.nextNoLineSeparate().trim().toLowerCase();
 
             if (users.keySet().contains(username)) {
                 userStatistics = users.get(username);
@@ -270,7 +179,7 @@ class Program {
                 System.out.println("Username \"" + username + "\" not exists in system");
                 System.out.println("Do you want to register?");
 
-                if (positiveAnswer(onlineScanner)) {
+                if (positiveAnswer()) {
                     userStatistics = new ArrayList<>();
                     userStatistics.add(0);
                     userStatistics.add(0);
@@ -324,7 +233,7 @@ class Program {
         } else {
             System.out.println("Your rating is " + (int) Math.ceil(grade * 3800));
         }
-        System.out.println("There are " + mainDict.size() + " words in dictionary");
+        System.out.println("There are " + main.size() + " words in dictionary");
     }
 
     /**
@@ -332,15 +241,14 @@ class Program {
      *
      * @param dictionary - one of 4 dictionaries: noun, verb, adjective, adverb
      * @param word       - String, word in dictionary
-     * @param part       - String, possible: "Noun", "Verb", "Adjective", "Adverb"
      */
-    private void writeMeanings(Map<String, List<String>> dictionary, String word, String part) {
+    private void writeMeanings(Dictionary dictionary, String word) {
         List<String> descriptions = dictionary.get(word);
         if (descriptions == null) {
             return;
         }
 
-        System.out.println("===" + part + "===");
+        System.out.println("===" + dictionary.getType() + "===");
         for (int i = 0; i < descriptions.size(); ++i) {
             System.out.println((i + 1) + ") " + descriptions.get(i));
         }
@@ -352,17 +260,17 @@ class Program {
      * @param word - String, word in dictionary
      */
     private void writeAllMeanings(String word) {
-        if (mainDict.get(word) == null) {
+        if (main.get(word) == null) {
             return;
         }
 
         System.out.println("===MAIN MEANING===");
-        System.out.println(mainDict.get(word).toUpperCase());
+        System.out.println(main.get(word).get(0).toUpperCase());
 
-        writeMeanings(nounDict, word, "Noun");
-        writeMeanings(verbDict, word, "Verb");
-        writeMeanings(adjDict, word, "Adjective");
-        writeMeanings(advDict, word, "Adverb");
+        writeMeanings(noun, word);
+        writeMeanings(verb, word);
+        writeMeanings(adj, word);
+        writeMeanings(adv, word);
     }
 
     private void help() {
@@ -385,7 +293,7 @@ class Program {
      */
     private int toNumber(String number) {
         try {
-            BigInteger res = new BigInteger(removeWhiteSpaces(number));
+            BigInteger res = new BigInteger(number.trim());
             res = res.min(allDictSizeB);
             return Integer.parseInt(res.toString());
         } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
@@ -402,6 +310,17 @@ class Program {
         return pos;
     }
 
+    private int getLastWordPos(String s) {
+        int pos = s.length() - 1;
+        while (pos >= 0 && s.charAt(pos) != ' ') {
+            --pos;
+        }
+        while (pos >= 0 && s.charAt(pos) == ' ') {
+            --pos;
+        }
+        return s.charAt(pos) != ' ' ? pos + 1 : pos;
+    }
+
     private void waitForQuery() {
         System.out.println("Write something to contact with this program");
         help();
@@ -411,7 +330,7 @@ class Program {
             while (haveToRead && onlineScanner.hasNext()) {
                 System.out.println("Please send query");
 
-                String query = removeWhiteSpaces(onlineScanner.nextNoLineSeparate());
+                String query = onlineScanner.nextNoLineSeparate().trim();
                 if (query.isEmpty()) {
                     continue;
                 }
@@ -422,6 +341,7 @@ class Program {
                     case "-":
                         haveToRead = false;
                         break;
+
                     case "/q":
                     case "/quiz":
                     case "/l":
@@ -431,20 +351,23 @@ class Program {
                             System.err.println("Expected number after " + first);
                         } else {
                             if (first.startsWith("/q")) {
-                                quizMode(onlineScanner, qty, false);
+                                quizMode(qty);
                             } else {
-                                quizMode(onlineScanner, qty, true);
+                                listMode(qty);
                             }
                         }
                         break;
+
                     case "/h":
                     case "/help":
                         help();
                         break;
+
                     case "/r":
                     case "/rate":
                         showRating();
                         break;
+
                     case "/e":
                     case "/edit":
                     case "/a":
@@ -453,30 +376,31 @@ class Program {
                     case "/del":
                     case "/delete":
                         if (query.length() > first.length()) {
-                            String currWord = removeWhiteSpaces(query.substring(pos));
+                            String currWord = query.substring(pos).trim();
                             if (query.startsWith("/e")) {
-                                editMode(onlineScanner, currWord);
+                                editMode(currWord);
                             } else if (query.startsWith("/a")) {
-                                createDict(onlineScanner, currWord);
-                                writeAllMeanings(currWord);
+                                createDict(currWord);
                             } else {
-                                mainDict.remove(currWord);
-                                nounDict.remove(currWord);
-                                verbDict.remove(currWord);
-                                adjDict.remove(currWord);
-                                advDict.remove(currWord);
+                                main.remove(currWord);
+                                noun.remove(currWord);
+                                verb.remove(currWord);
+                                adj.remove(currWord);
+                                adv.remove(currWord);
                                 System.out.println("Successfully removed " + currWord + " from all dictionaries");
                             }
+                            writeAllMeanings(currWord);
                         } else {
                             System.err.println("Expected word after " + first);
                         }
                         break;
+
                     default:
                         if (query.startsWith("/")) {
                             System.err.println("Unknown command " + first);
                             System.err.println("Input /h to see commands list");
-                        } else if (mainDict.get(query) == null) {
-                            addMode(query, onlineScanner);
+                        } else if (main.get(query) == null) {
+                            addMode(query);
                         } else {
                             writeAllMeanings(query);
                         }
@@ -490,65 +414,56 @@ class Program {
         }
     }
 
-    private Map<String, List<String>> chooseAndWriteDict(String type, String word) {
-        switch (type) {
-            case "noun":
-                writeMeanings(nounDict, word, "noun");
-                return nounDict;
-            case "verb":
-                writeMeanings(verbDict, word, "verb");
-                return verbDict;
-            case "adj":
-                writeMeanings(adjDict, word, "adjective");
-                return adjDict;
-            case "adv":
-                writeMeanings(advDict, word, "adverb");
-                return advDict;
-            default:
-                System.out.println("Don't have dictionaries such kind of '" + word + "'");
-                return null;
+    private Dictionary chooseAndWriteDict(String type, String word) {
+        if (dictNames.get(type) == null) {
+            System.out.println("Don't have dictionaries such kind of '" + word + "'");
+            return null;
         }
+
+        Dictionary dictionary = dictionaries[dictNames.get(type)];
+        writeMeanings(dictionary, word);
+        return dictionary;
     }
 
-    private String getNextNotEmpty(FastScanner scanner) {
+    private String getNextNotEmpty() {
         String answer = "";
-        while (!answer.isEmpty()) {
+        do {
             try {
-                answer = removeWhiteSpaces(scanner.nextNoLineSeparate());
+                answer = onlineScanner.nextNoLineSeparate().trim();
             } catch (IOException e) {
                 System.err.println("Scanner had broken at reading your query");
                 updateFiles();
                 System.exit(0);
             }
-        }
+        } while (answer.isEmpty());
 
         return answer;
     }
 
-    private void createDict(FastScanner scanner, String word) {
-        if (mainDict.get(word) == null) {
+    private void createDict(String word) {
+        if (main.get(word) == null) {
             System.out.println("Main meaning for this word wasn't found");
             System.out.println("Please input main meaning");
-            mainDict.put(word, getNextNotEmpty(scanner));
+            main.put(word, List.of(getNextNotEmpty()));
         }
         System.out.println("Input a dictionary you want to create");
         String answer;
         List<String> dictionaries = List.of("noun", "verb", "adj", "adv");
         do {
             System.out.println("(input noun or verb or adj or adv)");
-            answer = getNextNotEmpty(scanner);
+            answer = getNextNotEmpty();
 
             if (answer.equals("-")) {
                 return;
             }
         } while (!dictionaries.contains(answer));
 
-        Map<String, List<String>> currDict = chooseAndWriteDict(answer, word);
+        Dictionary currDict = chooseAndWriteDict(answer, word);
         if (currDict == null) {
             return;
         }
 
-        addMeanings(scanner, currDict, word, answer);
+        addMeanings(currDict, word);
     }
 
     private String reduce(String part) {
@@ -558,87 +473,79 @@ class Program {
         return part.substring(0, 3);
     }
 
-    private void editMode(FastScanner scanner, String word) {
+    private void editMode(String word) {
         System.out.print("The word '" + word + "' ");
-        if (mainDict.get(word) == null) {
+        if (main.get(word) == null) {
             System.out.println("not found in dictionaries");
             return;
         }
 
-        List<String> dictionaries = new ArrayList<>();
-        dictionaries.add("main");
-        if (nounDict.get(word) != null) {
-            dictionaries.add("noun");
-        }
-        if (verbDict.get(word) != null) {
-            dictionaries.add("verb");
-        }
-        if (adjDict.get(word) != null) {
-            dictionaries.add("adjective");
-        }
-        if (advDict.get(word) != null) {
-            dictionaries.add("adverb");
+        List<String> existDict = new ArrayList<>();
+        for (int i = 0; i < DICT_QTY; ++i) {
+            if (dictionaries[i].get(word) != null) {
+                existDict.add(dictionaries[i].getType());
+            }
         }
 
         System.out.print("found as ");
-        for (int i = 0; i < dictionaries.size() - 1; ++i) {
-            System.out.print(dictionaries.get(i) + ", ");
+        for (int i = 1; i < existDict.size() - 1; ++i) {
+            System.out.print(existDict.get(i) + ", ");
         }
-        System.out.println(dictionaries.get(dictionaries.size() - 1));
-        for (int i = 0; i < dictionaries.size(); ++i) {
-            dictionaries.set(i, reduce(dictionaries.get(i)));
+        System.out.println(existDict.get(existDict.size() - 1));
+        for (int i = 0; i < existDict.size(); ++i) {
+            existDict.set(i, reduce(existDict.get(i)));
         }
 
         System.out.println("Which dictionary do you want to edit?");
         String answer;
         do {
             System.out.print("(input ");
-            for (int i = 0; i < dictionaries.size() - 1; ++i) {
-                System.out.print(dictionaries.get(i) + " or ");
+            for (int i = 0; i < existDict.size() - 1; ++i) {
+                System.out.print(existDict.get(i) + " or ");
             }
-            System.out.println(dictionaries.get(dictionaries.size() - 1) + ")");
+            System.out.println(existDict.get(existDict.size() - 1) + ")");
 
-            answer = getNextNotEmpty(scanner);
-        } while (!dictionaries.contains(answer));
+            answer = getNextNotEmpty();
+        } while (!existDict.contains(answer));
 
         if (answer.equals("main")) {
             System.out.println("===MAIN MEANING===");
-            System.out.println(mainDict.get(word).toUpperCase());
+            System.out.println(main.get(word).get(0).toUpperCase());
 
             System.out.println("Input new meaning for " + word);
-            mainDict.put(word, getNextNotEmpty(scanner));
+            main.put(word, List.of(getNextNotEmpty()));
             return;
         }
 
         System.out.println("This is all meanings as " + answer);
-        Map<String, List<String>> currDict = chooseAndWriteDict(answer, word);
+        Dictionary currDict = chooseAndWriteDict(answer, word);
         if (currDict == null) {
             return;
         }
 
-        while (true) {
+        do {
             System.out.println("Input 'del all' to delete all meanings");
             System.out.println("      'edit' to change meanings");
 
-            answer = getNextNotEmpty(scanner);
-            if (answer.equals("-")) {
+            answer = getNextNotEmpty();
+        } while (!(answer.equals("edit") || answer.equals("del all")));
+
+        switch (answer) {
+            case "del all":
+                currDict.remove(word);
                 break;
-            }
-            switch (answer) {
-                case "del all":
-                    currDict.remove(word);
-                    break;
-                case "edit":
-                    editMeanings(scanner, currDict, word);
-                    break;
-                default:
-                    System.err.println("Found unknown command '" + answer + "'");
-                    break;
-            }
+
+            case "edit":
+                editMeanings(currDict, word);
+                break;
+
+            default:
+                System.err.println("Found unknown command '" + answer + "'");
+                break;
         }
     }
 
-    private void editMeanings(FastScanner scanner, Map<String, List<String>> dictionary, String word) {
+    private void editMeanings(Dictionary dictionary, String word) {
         while (true) {
             List<String> meanings = dictionary.get(word);
 
@@ -646,13 +553,13 @@ class Program {
             System.out.println("      '- <number>' to delete meaning at position <number>");
             System.out.println("      '~ <number>' to edit meaning at position <number>");
             System.out.println("      '-' to quit");
-            String answer = getNextNotEmpty(scanner);
+            String answer = getNextNotEmpty();
             if (answer.equals("-")) {
                 break;
             }
 
             int pos = getSecondWordPos(answer);
-            String second = removeWhiteSpaces(answer.substring(pos));
+            String second = answer.substring(pos).trim();
             answer = answer.substring(0, pos);
 
             switch (answer) {
@@ -663,6 +570,7 @@ class Program {
                     }
                     meanings.add(second);
                     break;
+
                 case "-":
                 case "~":
                     int value = toNumber(second);
@@ -670,7 +578,7 @@ class Program {
                         System.err.println("Expected positive number");
                         continue;
                     }
-                    if (value >= meanings.size()) {
+                    if (--value >= meanings.size()) {
                         System.out.println("Number should be less than " + (meanings.size() + 1));
                         continue;
                     }
@@ -679,29 +587,31 @@ class Program {
                         meanings.remove(value);
                     } else {
                         System.out.println("Input new meaning");
-                        String newMeaning = getNextNotEmpty(scanner);
+                        String newMeaning = getNextNotEmpty();
                         meanings.set(value, newMeaning);
                     }
                     break;
+
                 default:
                     System.err.println("Unknown command '" + answer + "'");
                     break;
             }
 
             dictionary.put(word, meanings);
-            writeAllMeanings(word);
+            writeMeanings(dictionary, word);
         }
     }
 
-    private void addMeanings(FastScanner scanner, Map<String, List<String>> dictionary,
-                             String word, String part) {
+    private void addMeanings(Dictionary dictionary, String word) {
         System.out.println();
-        System.out.println("Input description as " + part);
+        System.out.println("Input '-' to quit");
+        System.out.println("      '--' to delete previous meaning");
+        System.out.println("Input description as " + dictionary.getType());
 
         List<String> descriptions = dictionary.get(word) == null ? new ArrayList<>() : dictionary.get(word);
 
         while (true) {
-            String currDescription = getNextNotEmpty(scanner);
+            String currDescription = getNextNotEmpty();
             if (currDescription.equals("-")) {
                 break;
             }
@@ -722,20 +632,19 @@ class Program {
         }
     }
 
-    private void addMode(String word, FastScanner scanner) throws IOException {
+    private void addMode(String word) throws IOException {
         System.out.println("Not found '" + word + "' in dictionary");
         System.out.println("Would you like to add this word to it?");
 
-        if (positiveAnswer(scanner)) {
+        if (positiveAnswer()) {
             System.out.println("Please input main description");
-            mainDict.put(word, getNextNotEmpty(scanner));
+            main.put(word, List.of(getNextNotEmpty()));
 
             System.out.println("Please input another descriptions");
-            System.out.println("input '-' for finish inputting");
-            addMeanings(scanner, nounDict, word, "noun");
-            addMeanings(scanner, verbDict, word, "verb");
-            addMeanings(scanner, adjDict, word, "adjective");
-            addMeanings(scanner, advDict, word, "adverb");
+            addMeanings(noun, word);
+            addMeanings(verb, word);
+            addMeanings(adj, word);
+            addMeanings(adv, word);
 
             System.out.println("Successfully added!");
         } else {
@@ -745,23 +654,10 @@ class Program {
 
     private String chooseWord(Set<String> written, Random rand) {
         int type;
-        String word = "";
+        String word;
         do {
-            type = rand.nextInt(4);
-            switch (type) {
-                case 0:
-                    word = nounWords.get(rand.nextInt(nounWords.size())) + "0";
-                    break;
-                case 1:
-                    word = verbWords.get(rand.nextInt(verbWords.size())) + "1";
-                    break;
-                case 2:
-                    word = adjWords.get(rand.nextInt(adjWords.size())) + "2";
-                    break;
-                case 3:
-                    word = advWords.get(rand.nextInt(advWords.size())) + "3";
-                    break;
-            }
+            type = rand.nextInt(4) + 1;
+            word = dictionaries[type].getWords().get(rand.nextInt(dictionaries[type].size())) + " " + type;
         } while (written.contains(word));
 
         written.add(word);
@@ -769,7 +665,7 @@ class Program {
         return word;
     }
 
-    private void quizMode(FastScanner scanner, int qty, boolean list) {
+    private void quizMode(int qty) {
         Random rand = new Random();
         Set<String> written = new TreeSet<>();
         int correct = 0;
@@ -778,41 +674,14 @@ class Program {
         for (int i = 1; i <= qty; ++i) {
             System.out.print(i + ") ");
             String currWord = chooseWord(written, rand);
-            int type = Integer.parseInt(currWord.substring(currWord.length() - 1));
-            currWord = currWord.substring(0, currWord.length() - 1);
+            int pos = getLastWordPos(currWord);
+            int type = Integer.parseInt(currWord.substring(pos).trim());
+            currWord = currWord.substring(0, pos);
 
-            Map<String, List<String>> currDict = new TreeMap<>();
-            String dictType = "";
-            switch (type) {
-                case 0:
-                    System.out.println(currWord + " as noun");
-                    currDict = nounDict;
-                    dictType = "Noun";
-                    break;
-                case 1:
-                    System.out.println(currWord + " as verb");
-                    currDict = verbDict;
-                    dictType = "Verb";
-                    break;
-                case 2:
-                    System.out.println(currWord + " as adjective");
-                    currDict = adjDict;
-                    dictType = "Adjective";
-                    break;
-                case 3:
-                    System.out.println(currWord + " as adverb");
-                    currDict = advDict;
-                    dictType = "Adverb";
-                    break;
-                default:
-                    System.err.println("expected 0..3, found another for random: " + type);
-                    System.exit(0);
-            }
-            if (list) {
-                continue;
-            }
+            Dictionary currDict = dictionaries[type];
+            System.out.println(currWord + " as " + currDict.getType());
 
-            String guestAns = getNextNotEmpty(scanner);
+            String guestAns = getNextNotEmpty();
             if (guestAns.equals("-")) {
                 qty = i;
                 break;
@@ -822,19 +691,14 @@ class Program {
                 System.out.println("Unfortunately, it's wrong answer");
                 System.out.println();
                 System.out.println("===MAIN MEANING===");
-                System.out.println(mainDict.get(currWord).toUpperCase());
-                writeMeanings(currDict, currWord, dictType);
+                System.out.println(main.get(currWord).get(0).toUpperCase());
+                writeMeanings(currDict, currWord);
                 System.out.println();
             } else {
                 System.out.println("Yes");
                 ++correct;
                 System.out.println();
             }
-        }
-
-        if (list) {
-            System.out.println();
-            return;
         }
 
         System.out.println(correct + " correct / " + qty + " total");
@@ -857,40 +721,21 @@ class Program {
         System.out.println();
     }
 
-    private void updateNotMain(Map<String, List<String>> dictionary, String fileName) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(new File(folder + fileName)))) {
-            for (Map.Entry<String, List<String>> entry : dictionary.entrySet()) {
-                writer.write(entry.getKey() + ": ");
-
-                writer.write(entry.getValue().get(0));
-                for (int i = 1; i < entry.getValue().size(); ++i) {
-                    writer.write(", " + entry.getValue().get(i));
-                }
-                writer.newLine();
-            }
-        } catch (IOException e) {
-            System.err.println("Something gone wrong while updating file '" + folder + fileName + "'");
-            e.printStackTrace();
-            System.exit(0);
+    private void listMode(int qty) {
+        List<String> words = main.getWords();
+        Random random = new Random();
+        for (int i = 0; i < qty; ++i) {
+            String currWord = words.remove(random.nextInt(words.size()));
+            System.out.println((i + 1) + ") " + currWord);
         }
     }
 
     private void updateFiles() {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(new File(folder + "MainDictionary.ota")))) {
-            for (Map.Entry<String, String> entry : mainDict.entrySet()) {
-                writer.write(entry.getKey() + ": " + entry.getValue());
-                writer.newLine();
-            }
-        } catch (IOException e) {
-            System.err.println("Something gone wrong while updating file");
-            e.printStackTrace();
-            System.exit(0);
-        }
-
-        updateNotMain(nounDict, "NounDict.ota");
-        updateNotMain(verbDict, "VerbDict.ota");
-        updateNotMain(adjDict, "AdjectiveDict.ota");
-        updateNotMain(advDict, "AdverbDict.ota");
+        main.update(new File(direction + "MainDictionary.ota"));
+        noun.update(new File(direction + "NounDict.ota"));
+        verb.update(new File(direction + "VerbDict.ota"));
+        adj.update(new File(direction + "AdjectiveDict.ota"));
+        adv.update(new File(direction + "AdverbDict.ota"));
 
         if (username.equals("Anonymous")) {
             Collections.fill(userStatistics, 0);
