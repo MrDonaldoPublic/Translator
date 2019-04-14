@@ -53,7 +53,7 @@ class Program {
      * initializes all dictionaries: main, noun, verb, adjective, adverb
      */
     private void initializeDictionaries() {
-        dictionaries[0] = main = new Dictionary(new File(direction + "MainDictionary.ota"), "main");
+        dictionaries[0] = main = new Dictionary(new File(direction + "MainDict.ota"), "main");
         dictionaries[1] = noun = new Dictionary(new File(direction + "NounDict.ota"), "noun");
         dictionaries[2] = verb = new Dictionary(new File(direction + "VerbDict.ota"), "verb");
         dictionaries[3] = adj = new Dictionary(new File(direction + "AdjectiveDict.ota"), "adjective");
@@ -124,10 +124,10 @@ class Program {
      * 'false' if user types 'n' or 'no'
      * @throws IOException (in case that scanner could be broken)
      */
-    private boolean positiveAnswer() throws IOException {
+    private boolean positiveAnswer() {
         System.out.println("(y or n)");
         while (true) {
-            String guestAns = onlineScanner.nextNoLineSeparate().trim().toLowerCase();
+            String guestAns = getNextNotEmpty().toLowerCase();
             switch (guestAns) {
                 case "y":
                 case "yes":
@@ -152,45 +152,39 @@ class Program {
         readUsers();
 
         System.out.println("Would you like to save your rating (log in)?");
-        try {
-            if (!positiveAnswer()) {
+        if (!positiveAnswer()) {
+            username = "Anonymous";
+            userStatistics = users.get(username);
+            welcomeToMyProgram(username, -1);
+            return;
+        }
+
+        System.out.println("Please write your name:");
+        username = getNextNotEmpty().toLowerCase();
+
+        if (users.keySet().contains(username)) {
+            userStatistics = users.get(username);
+            if ((int) userStatistics.get(1) == 0) {
+                welcomeToMyProgram(username, -1);
+            } else {
+                int correct = (int) userStatistics.get(0), total = (int) userStatistics.get(1);
+                welcomeToMyProgram(username, (double) correct / total);
+            }
+        } else {
+            System.out.println("Username \"" + username + "\" not exists in system");
+            System.out.println("Do you want to register?");
+
+            if (positiveAnswer()) {
+                userStatistics = new ArrayList<>();
+                userStatistics.add(0);
+                userStatistics.add(0);
+                System.out.println("\"" + username + "\" successfully registered!");
+            } else {
                 username = "Anonymous";
                 userStatistics = users.get(username);
-                welcomeToMyProgram(username, -1);
-                return;
+                System.out.println("Ok.");
             }
-
-            System.out.println("Please write your name:");
-            username = onlineScanner.nextNoLineSeparate().trim().toLowerCase();
-
-            if (users.keySet().contains(username)) {
-                userStatistics = users.get(username);
-                if ((int) userStatistics.get(1) == 0) {
-                    welcomeToMyProgram(username, -1);
-                } else {
-                    int correct = (int) userStatistics.get(0), total = (int) userStatistics.get(1);
-                    welcomeToMyProgram(username, (double) correct / total);
-                }
-            } else {
-                System.out.println("Username \"" + username + "\" not exists in system");
-                System.out.println("Do you want to register?");
-
-                if (positiveAnswer()) {
-                    userStatistics = new ArrayList<>();
-                    userStatistics.add(0);
-                    userStatistics.add(0);
-                    System.out.println("\"" + username + "\" successfully registered!");
-                } else {
-                    username = "Anonymous";
-                    userStatistics = users.get(username);
-                    System.out.println("Ok.");
-                }
-                welcomeToMyProgram(username, -1);
-            }
-        } catch (IOException e) {
-            System.err.println("Something gone wrong while logging in");
-            e.printStackTrace();
-            System.exit(0);
+            welcomeToMyProgram(username, -1);
         }
     }
 
@@ -263,21 +257,21 @@ class Program {
         System.out.println("===MAIN MEANING===");
         System.out.println(main.get(word).get(0).toUpperCase());
 
-        writeMeanings(noun, word);
-        writeMeanings(verb, word);
-        writeMeanings(adj, word);
-        writeMeanings(adv, word);
+        for (int num = 1; num < DICT_QTY; ++num) {
+            writeMeanings(dictionaries[num], word);
+        }
     }
 
     private void help() {
         System.out.println("=====PROGRAM-RESPONSIBLE COMMANDS LIST=====");
         System.out.println("    case -: stop running this program");
-        System.out.println("    case /q <number>: move to quiz mode");
-        System.out.println("    case /l <number>: move to list mode");
-        System.out.println("    case /e <word>: move to edit mode");
-        System.out.println("    case /a <word>: create new dictionary for this word");
-        System.out.println("    case /d <word>: delete all meanings for this word");
-        System.out.println("    case /h: display this message");
+        System.out.println("    case /q <number> : move to quiz mode");
+        System.out.println("    case /l <number> : move to list mode");
+        System.out.println("    case /e <word>   : move to edit mode");
+        System.out.println("    case /a <word>   : create new dictionary for this word");
+        System.out.println("    case /d <word>   : delete all meanings for this word");
+        System.out.println("    case /r          : display current rating");
+        System.out.println("    case /h          : display this message");
         System.out.println("===========================================");
     }
 
@@ -325,12 +319,15 @@ class Program {
             boolean haveToRead = true;
             while (haveToRead && onlineScanner.hasNext()) {
                 // allDictSize - size of all dictionaries
-                int allDictSize = noun.size() + verb.size() + adj.size() + adv.size();
+                int allDictSize = 0;
+                for (int num = 1; num < DICT_QTY; ++num) {
+                    allDictSize += dictionaries[num].size();
+                }
                 allDictSizeB = new BigInteger(Integer.toString(allDictSize));
 
                 System.out.println("Please send query");
 
-                String query = onlineScanner.nextNoLineSeparate().trim();
+                String query = getNextNotEmpty();
                 if (query.isEmpty()) {
                     continue;
                 }
@@ -382,11 +379,9 @@ class Program {
                             } else if (query.startsWith("/a")) {
                                 createDict(currWord);
                             } else {
-                                main.remove(currWord);
-                                noun.remove(currWord);
-                                verb.remove(currWord);
-                                adj.remove(currWord);
-                                adv.remove(currWord);
+                                for (int num = 0; num < DICT_QTY; ++num) {
+                                    dictionaries[num].remove(currWord);
+                                }
                                 System.out.println("Successfully removed " + currWord + " from all dictionaries");
                             }
                             writeAllMeanings(currWord);
@@ -448,15 +443,19 @@ class Program {
         }
         System.out.println("Input a dictionary you want to create");
         String answer;
-        List<String> dictionaries = List.of("noun", "verb", "adj", "adv");
         do {
-            System.out.println("(input noun or verb or adj or adv)");
+            System.out.println("(input ");
+            for (int num = 1; num < DICT_QTY - 1; ++num) {
+                System.out.println(reduce(dictionaries[num].getType()) + " or ");
+            }
+            System.out.println(reduce(dictionaries[DICT_QTY - 1].getType()) + ")");
+
             answer = getNextNotEmpty();
 
             if (answer.equals("-")) {
                 return;
             }
-        } while (!dictionaries.contains(answer));
+        } while (!dictNames.keySet().contains(answer));
 
         Dictionary currDict = chooseAndWriteDict(answer, word);
         if (currDict == null) {
@@ -641,10 +640,9 @@ class Program {
             main.put(word, List.of(getNextNotEmpty()));
 
             System.out.println("Please input another descriptions");
-            addMeanings(noun, word);
-            addMeanings(verb, word);
-            addMeanings(adj, word);
-            addMeanings(adv, word);
+            for (int num = 1; num < DICT_QTY; ++num) {
+                addMeanings(dictionaries[num], word);
+            }
 
             System.out.println("Successfully added!");
         } else {
@@ -724,11 +722,10 @@ class Program {
     }
 
     private void updateFiles() {
-        main.update(new File(direction + "MainDictionary.ota"));
-        noun.update(new File(direction + "NounDict.ota"));
-        verb.update(new File(direction + "VerbDict.ota"));
-        adj.update(new File(direction + "AdjectiveDict.ota"));
-        adv.update(new File(direction + "AdverbDict.ota"));
+        for (int num = 0; num < DICT_QTY; ++num) {
+            String fileName = direction + dictionaries[num].getTypeHeadWord() + "Dict.ota";
+            dictionaries[num].update(new File(fileName));
+        }
 
         if (username.equals("Anonymous")) {
             Collections.fill(userStatistics, 0);

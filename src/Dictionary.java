@@ -14,7 +14,7 @@ public class Dictionary {
     public Dictionary(File f, String type) {
         this.type = type;
         try (FastScanner scanner = new FastScanner(f)) {
-            // reading all words from file "MainDictionary.ota"
+            // reading all words from file "MainDict.ota"
             while (scanner.hasNext()) {
                 // reading word
                 String currWord = scanner.next();
@@ -71,6 +71,10 @@ public class Dictionary {
 
     public List<String> getWords() {
         return words;
+    }
+
+    public String getTypeHeadWord() {
+        return this.type.substring(0, 1).toUpperCase() + this.type.substring(1);
     }
 
     public void update(File f) {
