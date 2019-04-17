@@ -1,3 +1,5 @@
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import scanner.FastScanner;
 
 import java.io.*;
@@ -7,10 +9,6 @@ import java.util.*;
 class Program {
     // dictionary - pair of word and it meanings
     private Dictionary main;
-    private Dictionary noun;
-    private Dictionary verb;
-    private Dictionary adj;
-    private Dictionary adv;
 
     // dictionaries - array of all dictionaries
     private Dictionary[] dictionaries = new Dictionary[DICT_QTY];
@@ -50,14 +48,14 @@ class Program {
             "Candidate master", "Master", "International master", "Grandmaster", "International grandmaster", "Legendary grandmaster"};
 
     /**
-     * initializes all dictionaries: main, noun, verb, adjective, adverb
+     * Initializes all dictionaries: main, noun, verb, adjective, adverb.
      */
     private void initializeDictionaries() {
         dictionaries[0] = main = new Dictionary(new File(direction + "MainDict.ota"), "main");
-        dictionaries[1] = noun = new Dictionary(new File(direction + "NounDict.ota"), "noun");
-        dictionaries[2] = verb = new Dictionary(new File(direction + "VerbDict.ota"), "verb");
-        dictionaries[3] = adj = new Dictionary(new File(direction + "AdjectiveDict.ota"), "adjective");
-        dictionaries[4] = adv = new Dictionary(new File(direction + "AdverbDict.ota"), "adverb");
+        dictionaries[1] = new Dictionary(new File(direction + "NounDict.ota"), "noun");
+        dictionaries[2] = new Dictionary(new File(direction + "VerbDict.ota"), "verb");
+        dictionaries[3] = new Dictionary(new File(direction + "AdjectiveDict.ota"), "adjective");
+        dictionaries[4] = new Dictionary(new File(direction + "AdverbDict.ota"), "adverb");
 
         for (int i = 0; i < DICT_QTY; ++i) {
             String currName = dictionaries[i].getType();
@@ -67,7 +65,7 @@ class Program {
     }
 
     /**
-     * use this method to run this program
+     * Runs this program.
      */
     public void run() {
         initializeDictionaries();
@@ -77,10 +75,10 @@ class Program {
     }
 
     /**
-     * reads all users from respective file.
-     * each user is recorded as like this: "-Name-: -correct answers-, 'Total-"
-     * -Name- is String
-     * -correct answers- and -Total- is Integer
+     * Reads all users from respective file.
+     * Each user is recorded as: "<Name>: <correct answers>, <Total>"
+     * <Name> is String
+     * <correct answers> and <Total> is Integer
      */
     private void readUsers() {
         try (FastScanner scanner = new FastScanner(new File("Users.ota"))) {
@@ -118,11 +116,10 @@ class Program {
     }
 
     /**
-     * uses when program want answer from user: positive or negative
+     * Returns user answer to the program query.
      *
-     * @return 'true' if user types 'y' or 'yes'
-     * 'false' if user types 'n' or 'no'
-     * @throws IOException (in case that scanner could be broken)
+     * @return true if user inputs 'y' or 'yes'
+     *         false if user inputs 'n' or 'no'
      */
     private boolean positiveAnswer() {
         System.out.println("(y or n)");
@@ -144,9 +141,9 @@ class Program {
     }
 
     /**
-     * logs in user to this System
-     * if user doesn't want to log in
-     * then his name would be 'Anonymous' and his statistics wouldn't be saved
+     * Logs in user to this System.
+     * If user doesn't want to log in his name would be 'Anonymous'
+     * And his statistics wouldn't be saved.
      */
     private void userLogin() {
         readUsers();
@@ -189,7 +186,8 @@ class Program {
     }
 
     /**
-     * writes current user's rating
+     * Prints current user's rating if the user has logged in.
+     * Otherwise doing nothing.
      */
     private void showRating() {
         if (username.equals("Anonymous")) {
@@ -214,7 +212,7 @@ class Program {
     }
 
     /**
-     * writes sentences when run this program
+     * Prints words at the beginning.
      */
     private void welcomeToMyProgram(String name, double grade) {
         System.out.println("Welcome to ota program, " + name + "!");
@@ -227,27 +225,31 @@ class Program {
     }
 
     /**
-     * writes all meanings of word in some dictionary
+     * Prints all meanings of word in some dictionary.
      *
-     * @param dictionary - one of 4 dictionaries: noun, verb, adjective, adverb
-     * @param word       - String, word in dictionary
+     * @param dictionary
+     *        One of 4 dictionaries: noun, verb, adjective, adverb
+     * @param word
+     *        Key word in dictionary
+     * @exception NullPointerException if dictionary == null
      */
-    private void writeMeanings(Dictionary dictionary, String word) {
-        List<String> descriptions = dictionary.get(word);
-        if (descriptions == null) {
+    private void writeMeanings(@NotNull Dictionary dictionary, String word) {
+        List<String> meanings = dictionary.get(word);
+        if (meanings == null) {
             return;
         }
 
         System.out.println("===" + dictionary.getType() + "===");
-        for (int i = 0; i < descriptions.size(); ++i) {
-            System.out.println((i + 1) + ") " + descriptions.get(i));
+        for (int i = 0; i < meanings.size(); ++i) {
+            System.out.println((i + 1) + ") " + meanings.get(i));
         }
     }
 
     /**
-     * writes all meanings in all dictionaries
+     * writes all meanings in all dictionaries about the word.
      *
-     * @param word - String, word in dictionary
+     * @param word
+     *        Key string in dictionary
      */
     private void writeAllMeanings(String word) {
         if (main.get(word) == null) {
@@ -262,6 +264,9 @@ class Program {
         }
     }
 
+    /**
+     * Prints list of available commands to console.
+     */
     private void help() {
         System.out.println("=====PROGRAM-RESPONSIBLE COMMANDS LIST=====");
         System.out.println("    case -: stop running this program");
@@ -276,12 +281,14 @@ class Program {
     }
 
     /**
-     * Casts number to int from String
+     * Casts number to int from String.
      *
-     * @param number - String with whitespace in first pos
+     * @param number
+     *        The string with whitespace in first pos
      * @return number casted to int or -1 if there is not number
+     * @exception NullPointerException if number == null
      */
-    private int toNumber(String number) {
+    private int toNumber(@NotNull String number) {
         try {
             BigInteger res = new BigInteger(number.trim());
             res = res.min(allDictSizeB);
@@ -291,26 +298,46 @@ class Program {
         }
     }
 
-    private int getSecondWordPos(String s) {
+    /**
+     * Returns integer position after first word.
+     * For example: "aloha my friend"
+     * ^
+     *
+     * @param s The string used to calculate the position
+     * @throws NullPointerException if s == null
+     */
+    private int getSecondWordPos(@NotNull String s) {
         int pos = 0;
-        while (pos < s.length() && s.charAt(pos) != ' ') {
+        while (pos < s.length() && s.charAt(pos) != ' ' && s.charAt(pos) != '\t') {
             ++pos;
         }
 
         return pos;
     }
 
-    private int getLastWordPos(String s) {
+    /**
+     * Returns integer position after last but one word.
+     * For example: "He  was  not  clear  about  that  yet"
+     * ^
+     *
+     * @param s The string used to calculate the position
+     * @throws NullPointerException if s == null
+     */
+    private int getLastWordPos(@NotNull String s) {
         int pos = s.length() - 1;
-        while (pos >= 0 && s.charAt(pos) != ' ') {
+        while (pos >= 0 && s.charAt(pos) != ' ' && s.charAt(pos) != '\t') {
             --pos;
         }
-        while (pos >= 0 && s.charAt(pos) == ' ') {
+        while (pos >= 0 && (s.charAt(pos) == ' ' || s.charAt(pos) == '\t')) {
             --pos;
         }
         return s.charAt(pos) != ' ' ? pos + 1 : pos;
     }
 
+    /**
+     * Reads user command and executes it.
+     * If there are unknown command respective message would be shown.
+     */
     private void waitForQuery() {
         System.out.println("Write something to contact with this program");
         help();
@@ -409,9 +436,20 @@ class Program {
         }
     }
 
+    /**
+     * Prints all meanings of word in respective dictionary
+     * And returns that dictionary.
+     *
+     * @param type
+     *        Represents dictionary type
+     * @param word
+     *        The key word used to print meanings of it
+     * @return Respective dictionary
+     */
+    @Nullable
     private Dictionary chooseAndWriteDict(String type, String word) {
         if (dictNames.get(type) == null) {
-            System.out.println("Don't have dictionaries such kind of '" + word + "'");
+            System.err.println("Don't have dictionaries such kind of '" + word + "'");
             return null;
         }
 
@@ -420,8 +458,12 @@ class Program {
         return dictionary;
     }
 
+    /**
+     * Returns not empty next word in scanner.
+     * If it catches IOException the program would be forcibly stooped.
+     */
     private String getNextNotEmpty() {
-        String answer = "";
+        String answer;
         do {
             try {
                 answer = onlineScanner.nextNoLineSeparate().trim();
@@ -429,12 +471,19 @@ class Program {
                 System.err.println("Scanner had broken at reading your query");
                 updateFiles();
                 System.exit(0);
+                return null;
             }
         } while (answer.isEmpty());
 
         return answer;
     }
 
+    /**
+     * Creates one more dictionary of word if that wasn't exist.
+     *
+     * @param word
+     *        The key word used to create new dictionary
+     */
     private void createDict(String word) {
         if (main.get(word) == null) {
             System.out.println("Main meaning for this word wasn't found");
@@ -465,13 +514,27 @@ class Program {
         addMeanings(currDict, word);
     }
 
-    private String reduce(String part) {
-        if (part.length() <= 4) {
-            return part;
+    /**
+     * Returns short form of the name of dictionary.
+     *
+     * @param name
+     *        The dictionary name
+     * @exception NullPointerException if name == null
+     */
+    private String reduce(@NotNull String name) {
+        if (name.length() <= 4) {
+            return name;
         }
-        return part.substring(0, 3);
+        return name.substring(0, 3);
     }
 
+    /**
+     * Edits meaning of word.
+     * First of all, dictionary should be chosen.
+     * Secondly, command should be chosen depending on the dictionary
+     * @param word
+     *        The key word used to edit dictionary
+     */
     private void editMode(String word) {
         System.out.print("The word '" + word + "' ");
         if (main.get(word) == null) {
@@ -544,7 +607,17 @@ class Program {
         }
     }
 
-    private void editMeanings(Dictionary dictionary, String word) {
+    /**
+     * Edits meanings of word.
+     * Can add, delete or redact meanings.
+     *
+     * @param dictionary
+     *        Contains meanings of the word
+     * @param word
+     *        The key word used to edit dictionary
+     * @exception NullPointerException if dictionary == null
+     */
+    private void editMeanings(@NotNull Dictionary dictionary, String word) {
         while (true) {
             List<String> meanings = dictionary.get(word);
 
@@ -601,13 +674,22 @@ class Program {
         }
     }
 
-    private void addMeanings(Dictionary dictionary, String word) {
+    /**
+     * Adds new several meanings to the dictionary.
+     *
+     * @param dictionary
+     *        Contains meanings of the word
+     * @param word
+     *        The key word used to redact dictionary
+     * @exception NullPointerException if dictionary == null
+     */
+    private void addMeanings(@NotNull Dictionary dictionary, String word) {
         System.out.println();
         System.out.println("Input '-' to quit");
         System.out.println("      '--' to delete previous meaning");
-        System.out.println("Input description as " + dictionary.getType());
+        System.out.println("All meanings as " + dictionary.getType() + ":");
 
-        List<String> descriptions = dictionary.get(word) == null ? new ArrayList<>() : dictionary.get(word);
+        List<String> meanings = dictionary.get(word) == null ? new ArrayList<>() : dictionary.get(word);
 
         while (true) {
             String currDescription = getNextNotEmpty();
@@ -616,30 +698,36 @@ class Program {
             }
 
             if (currDescription.equals("--")) {
-                if (descriptions.isEmpty()) {
+                if (meanings.isEmpty()) {
                     System.out.println("Nothing to delete");
                 } else {
-                    System.out.println("Removed " + descriptions.remove(descriptions.size() - 1));
+                    System.out.println("Removed " + meanings.remove(meanings.size() - 1));
                 }
             } else {
-                descriptions.add(currDescription);
+                meanings.add(currDescription);
             }
         }
 
-        if (!descriptions.isEmpty()) {
-            dictionary.put(word, descriptions);
+        if (!meanings.isEmpty()) {
+            dictionary.put(word, meanings);
         }
     }
 
-    private void addMode(String word) throws IOException {
+    /**
+     * Adds all meanings of word for all dictionaries.
+     *
+     * @param word
+     *        The key word used to add meanings
+     */
+    private void addMode(String word) {
         System.out.println("Not found '" + word + "' in dictionary");
         System.out.println("Would you like to add this word to it?");
 
         if (positiveAnswer()) {
-            System.out.println("Please input main description");
+            System.out.println("Please input main meaning");
             main.put(word, List.of(getNextNotEmpty()));
 
-            System.out.println("Please input another descriptions");
+            System.out.println("Please input another meanings");
             for (int num = 1; num < DICT_QTY; ++num) {
                 addMeanings(dictionaries[num], word);
             }
@@ -650,6 +738,12 @@ class Program {
         }
     }
 
+    /**
+     * Prints words in randomized order so user should answer its meaning.
+     *
+     * @param qty
+     *        Number of questions
+     */
     private void quizMode(int qty) {
         List<String> words = new ArrayList<>();
         for (int num = 1; num < DICT_QTY; ++num) {
@@ -687,6 +781,7 @@ class Program {
                 System.out.println();
             } else {
                 System.out.println("Yes");
+                writeMeanings(currDict, currWord);
                 ++correct;
                 System.out.println();
             }
@@ -712,6 +807,13 @@ class Program {
         System.out.println();
     }
 
+    /**
+     * Prints words in randomized order.
+     * If qty is larger than all words quantity, qty set to size of dictionary
+     *
+     * @param qty
+     *        Number of the words
+     */
     private void listMode(int qty) {
         qty = Math.min(qty, main.size());
         List<String> words = new ArrayList<>(List.copyOf(main.getWords()));
@@ -721,6 +823,10 @@ class Program {
         }
     }
 
+    /**
+     * Updates files containing all meanings of the words after several operations.
+     * Usually used in the end of the program.
+     */
     private void updateFiles() {
         for (int num = 0; num < DICT_QTY; ++num) {
             String fileName = direction + dictionaries[num].getTypeHeadWord() + "Dict.ota";
