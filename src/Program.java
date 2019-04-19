@@ -658,7 +658,7 @@ class Program {
                     if (answer.equals("-")) {
                         meanings.remove(value);
                     } else {
-                        System.out.println("Input new meaning");
+                        System.out.println("Replace " + meanings.get(value));
                         String newMeaning = getNextNotEmpty();
                         meanings.set(value, newMeaning);
                     }
