@@ -34,8 +34,8 @@ class Program {
     // username - String, name of current user.
     // If it's "Anonymous" then user hasn't registered and it doesn't changes rating
     // userStatistics - list of statistics of the current user
-    private String username;
-    private List<Object> userStatistics;
+    private String username = "Anonymous";
+    private List<Object> userStatistics = List.of(0, 0);
 
     // onlineScanner - scanner with System.in input stream
     // interact with user
@@ -69,7 +69,7 @@ class Program {
      */
     public void run() {
         initializeDictionaries();
-        userLogin();
+        readUsers();
         waitForQuery();
         updateFiles();
     }
@@ -119,7 +119,7 @@ class Program {
      * Returns user answer to the program query.
      *
      * @return true if user inputs 'y' or 'yes'
-     *         false if user inputs 'n' or 'no'
+     * false if user inputs 'n' or 'no'
      */
     private boolean positiveAnswer() {
         System.out.println("(y or n)");
@@ -137,51 +137,6 @@ class Program {
                 default:
                     System.out.println("Please input y or n");
             }
-        }
-    }
-
-    /**
-     * Logs in user to this System.
-     * If user doesn't want to log in his name would be 'Anonymous'
-     * And his statistics wouldn't be saved.
-     */
-    private void userLogin() {
-        readUsers();
-
-        System.out.println("Would you like to save your rating (log in)?");
-        if (!positiveAnswer()) {
-            username = "Anonymous";
-            userStatistics = users.get(username);
-            welcomeToMyProgram(username, -1);
-            return;
-        }
-
-        System.out.println("Please write your name:");
-        username = getNextNotEmpty().toLowerCase();
-
-        if (users.keySet().contains(username)) {
-            userStatistics = users.get(username);
-            if ((int) userStatistics.get(1) == 0) {
-                welcomeToMyProgram(username, -1);
-            } else {
-                int correct = (int) userStatistics.get(0), total = (int) userStatistics.get(1);
-                welcomeToMyProgram(username, (double) correct / total);
-            }
-        } else {
-            System.out.println("Username \"" + username + "\" not exists in system");
-            System.out.println("Do you want to register?");
-
-            if (positiveAnswer()) {
-                userStatistics = new ArrayList<>();
-                userStatistics.add(0);
-                userStatistics.add(0);
-                System.out.println("\"" + username + "\" successfully registered!");
-            } else {
-                username = "Anonymous";
-                userStatistics = users.get(username);
-                System.out.println("Ok.");
-            }
-            welcomeToMyProgram(username, -1);
         }
     }
 
@@ -212,26 +167,35 @@ class Program {
     }
 
     /**
-     * Prints words at the beginning.
+     * logs in to the system for save result of quiz mode
+     * @param name given for log in.
+     *             If there is no such name, then program
+     *             will suggest to create new 'person'
      */
-    private void welcomeToMyProgram(String name, double grade) {
-        System.out.println("Welcome to ota program, " + name + "!");
-        if (grade < 0) {
-            System.out.println("You are beginner, not participated in quiz mode");
+    private void login(String name) {
+        username = name;
+
+        if (users.keySet().contains(username)) {
+            userStatistics = users.get(username);
         } else {
-            System.out.println("Your rating is " + (int) Math.ceil(grade * 3800));
+            System.out.println("Username \"" + username + "\" not exists in system");
+            System.out.println("Do you want to register?");
+
+            if (positiveAnswer()) {
+                userStatistics = List.of(0, 0);
+                System.out.println("\"" + username + "\" successfully registered!");
+            } else {
+                System.out.println("Ok.");
+            }
         }
-        System.out.println("There are " + main.size() + " words in dictionary");
     }
 
     /**
      * Prints all meanings of word in some dictionary.
      *
-     * @param dictionary
-     *        One of 4 dictionaries: noun, verb, adjective, adverb
-     * @param word
-     *        Key word in dictionary
-     * @exception NullPointerException if dictionary == null
+     * @param dictionary One of 4 dictionaries: noun, verb, adjective, adverb
+     * @param word       Key word in dictionary
+     * @throws NullPointerException if dictionary == null
      */
     private void writeMeanings(@NotNull Dictionary dictionary, String word) {
         List<String> meanings = dictionary.get(word);
@@ -248,8 +212,7 @@ class Program {
     /**
      * writes all meanings in all dictionaries about the word.
      *
-     * @param word
-     *        Key string in dictionary
+     * @param word Key string in dictionary
      */
     private void writeAllMeanings(String word) {
         if (main.get(word) == null) {
@@ -268,25 +231,26 @@ class Program {
      * Prints list of available commands to console.
      */
     private void help() {
-        System.out.println("=====PROGRAM-RESPONSIBLE COMMANDS LIST=====");
+        System.out.println("There are " + main.size() + " words in dictionary");
+        System.out.println("=======PROGRAM-RESPONSIBLE COMMANDS LIST=======");
         System.out.println("    case -: stop running this program");
-        System.out.println("    case /q <number> : move to quiz mode");
-        System.out.println("    case /l <number> : move to list mode");
-        System.out.println("    case /e <word>   : move to edit mode");
-        System.out.println("    case /a <word>   : create new dictionary for this word");
-        System.out.println("    case /d <word>   : delete all meanings for this word");
-        System.out.println("    case /r          : display current rating");
-        System.out.println("    case /h          : display this message");
-        System.out.println("===========================================");
+        System.out.println("    case /q <number>   : move to quiz mode");
+        System.out.println("    case /l <number>   : move to list mode");
+        System.out.println("    case /e <word>     : move to edit mode");
+        System.out.println("    case /a <word>     : create new dictionary for this word");
+        System.out.println("    case /d <word>     : delete all meanings for this word");
+        System.out.println("    case /r            : display current rating");
+        System.out.println("    case /h            : display this message");
+        System.out.println("    case /login <name> : log in to this system");
+        System.out.println("===============================================");
     }
 
     /**
      * Casts number to int from String.
      *
-     * @param number
-     *        The string with whitespace in first pos
+     * @param number The string with whitespace in first pos
      * @return number casted to int or -1 if there is not number
-     * @exception NullPointerException if number == null
+     * @throws NullPointerException if number == null
      */
     private int toNumber(@NotNull String number) {
         try {
@@ -399,12 +363,15 @@ class Program {
                     case "/d":
                     case "/del":
                     case "/delete":
+                    case "/login":
                         if (query.length() > first.length()) {
                             String currWord = query.substring(pos).trim();
                             if (query.startsWith("/e")) {
                                 editMode(currWord);
                             } else if (query.startsWith("/a")) {
-                                createDict(currWord);
+                                addDict(currWord);
+                            } else if (query.startsWith("/login")) {
+                                login(currWord);
                             } else {
                                 for (int num = 0; num < DICT_QTY; ++num) {
                                     dictionaries[num].remove(currWord);
@@ -421,9 +388,10 @@ class Program {
                         if (query.startsWith("/")) {
                             System.err.println("Unknown command " + first);
                             System.err.println("Input /h to see commands list");
-                        } else if (main.get(query) == null) {
-                            addMode(query);
                         } else {
+                            if (main.get(query) == null) {
+                                addMode(query);
+                            }
                             writeAllMeanings(query);
                         }
                 }
@@ -440,10 +408,8 @@ class Program {
      * Prints all meanings of word in respective dictionary
      * And returns that dictionary.
      *
-     * @param type
-     *        Represents dictionary type
-     * @param word
-     *        The key word used to print meanings of it
+     * @param type Represents dictionary type
+     * @param word The key word used to print meanings of it
      * @return Respective dictionary
      */
     @Nullable
@@ -481,21 +447,20 @@ class Program {
     /**
      * Creates one more dictionary of word if that wasn't exist.
      *
-     * @param word
-     *        The key word used to create new dictionary
+     * @param word The key word used to create new dictionary
      */
-    private void createDict(String word) {
+    private void addDict(String word) {
         if (main.get(word) == null) {
             System.out.println("Main meaning for this word wasn't found");
             System.out.println("Please input main meaning");
             main.put(word, List.of(getNextNotEmpty()));
         }
-        System.out.println("Input a dictionary you want to create");
+        System.out.println("Input a dictionary you want to add or extend");
         String answer;
         do {
-            System.out.println("(input ");
+            System.out.print("(input ");
             for (int num = 1; num < DICT_QTY - 1; ++num) {
-                System.out.println(reduce(dictionaries[num].getType()) + " or ");
+                System.out.print(reduce(dictionaries[num].getType()) + " or ");
             }
             System.out.println(reduce(dictionaries[DICT_QTY - 1].getType()) + ")");
 
@@ -517,9 +482,8 @@ class Program {
     /**
      * Returns short form of the name of dictionary.
      *
-     * @param name
-     *        The dictionary name
-     * @exception NullPointerException if name == null
+     * @param name The dictionary name
+     * @throws NullPointerException if name == null
      */
     private String reduce(@NotNull String name) {
         if (name.length() <= 4) {
@@ -532,8 +496,8 @@ class Program {
      * Edits meaning of word.
      * First of all, dictionary should be chosen.
      * Secondly, command should be chosen depending on the dictionary
-     * @param word
-     *        The key word used to edit dictionary
+     *
+     * @param word The key word used to edit dictionary
      */
     private void editMode(String word) {
         System.out.print("The word '" + word + "' ");
@@ -611,11 +575,9 @@ class Program {
      * Edits meanings of word.
      * Can add, delete or redact meanings.
      *
-     * @param dictionary
-     *        Contains meanings of the word
-     * @param word
-     *        The key word used to edit dictionary
-     * @exception NullPointerException if dictionary == null
+     * @param dictionary Contains meanings of the word
+     * @param word       The key word used to edit dictionary
+     * @throws NullPointerException if dictionary == null
      */
     private void editMeanings(@NotNull Dictionary dictionary, String word) {
         while (true) {
@@ -677,11 +639,9 @@ class Program {
     /**
      * Adds new several meanings to the dictionary.
      *
-     * @param dictionary
-     *        Contains meanings of the word
-     * @param word
-     *        The key word used to redact dictionary
-     * @exception NullPointerException if dictionary == null
+     * @param dictionary Contains meanings of the word
+     * @param word       The key word used to redact dictionary
+     * @throws NullPointerException if dictionary == null
      */
     private void addMeanings(@NotNull Dictionary dictionary, String word) {
         System.out.println();
@@ -716,8 +676,7 @@ class Program {
     /**
      * Adds all meanings of word for all dictionaries.
      *
-     * @param word
-     *        The key word used to add meanings
+     * @param word The key word used to add meanings
      */
     private void addMode(String word) {
         System.out.println("Not found '" + word + "' in dictionary");
@@ -741,8 +700,7 @@ class Program {
     /**
      * Prints words in randomized order so user should answer its meaning.
      *
-     * @param qty
-     *        Number of questions
+     * @param qty Number of questions
      */
     private void quizMode(int qty) {
         List<String> words = new ArrayList<>();
@@ -790,8 +748,7 @@ class Program {
         System.out.println(correct + " correct / " + qty + " total");
         int prevCorrect = (int) userStatistics.get(0), prevTotal = (int) userStatistics.get(1);
         int currCorrect = prevCorrect + correct, currTotal = prevTotal + qty;
-        userStatistics.set(0, currCorrect);
-        userStatistics.set(1, currTotal);
+        userStatistics = List.of(currCorrect, currTotal);
 
         System.out.format("It's about %.2f%%%n", correct * 100.0 / qty);
 
@@ -811,8 +768,7 @@ class Program {
      * Prints words in randomized order.
      * If qty is larger than all words quantity, qty set to size of dictionary
      *
-     * @param qty
-     *        Number of the words
+     * @param qty Number of the words
      */
     private void listMode(int qty) {
         qty = Math.min(qty, main.size());
@@ -833,10 +789,9 @@ class Program {
             dictionaries[num].update(new File(fileName));
         }
 
-        if (username.equals("Anonymous")) {
-            Collections.fill(userStatistics, 0);
+        if (!username.equals("Anonymous")) {
+            users.put(username, userStatistics);
         }
-        users.put(username, userStatistics);
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(new File("Users.ota")))) {
             for (Map.Entry<String, List<Object>> entry : users.entrySet()) {
                 writer.write(entry.getKey() + ": ");
