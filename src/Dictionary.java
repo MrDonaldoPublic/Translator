@@ -1,20 +1,19 @@
 import scanner.FastScanner;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 
 public class Dictionary {
     private Map<String, List<String>> dict = new TreeMap<>();
+    private Map<String, String> sample = new TreeMap<>();
     private List<String> words = new ArrayList<>();
     private final String type, lineSeparate = System.lineSeparator();
 
-    public Dictionary(File f, String type) {
+    public Dictionary(String type) {
         this.type = type;
-        try (FastScanner scanner = new FastScanner(f)) {
-            // reading all words from file "MainDict.ota"
+        File dictFile = new File("dict/" + getTypeHeadWord() + "Dict.ota");
+        try (FastScanner scanner = new FastScanner(dictFile)) {
+            // reading all words from file "<type>Dict.ota"
             while (scanner.hasNext()) {
                 // reading word
                 String currWord = scanner.next();
@@ -37,7 +36,7 @@ public class Dictionary {
             // all words and its descriptions are added in dictionary
         } catch (IOException e) {
             // attempt to connect the file was unsuccessful
-            System.err.println("File '" + f + "' not found.");
+            System.err.println("File '" + dictFile + "' not found.");
             e.printStackTrace();
             System.exit(0);
         }
@@ -46,6 +45,28 @@ public class Dictionary {
         for (Map.Entry<String, List<String>> entry : dict.entrySet()) {
             words.add(entry.getKey());
         }
+
+        if (type.equals("main")) {
+            return;
+        }
+
+        for (String word : words) {
+            sample.put(word, "-");
+        }
+
+        File sampleFile = new File("sample/" + getTypeHeadWord() + "Sample.ota");
+        try (FastScanner scanner = new FastScanner(sampleFile)) {
+            while (scanner.hasNextNoLineSeparate()) {
+                String currWord = scanner.nextNoLineSeparate(), currSentence = scanner.next();
+                assert !lineSeparate.contains(currSentence) : "Sentence is lineSeparator";
+                sample.put(currWord, currSentence.trim());
+            }
+        } catch (IOException e) {
+            // attempt to connect the file was unsuccessful
+            System.err.println("File '" + dictFile + "' not found.");
+            e.printStackTrace();
+            System.exit(0);
+        }
     }
 
     public void put(String key, List<String> value) {
@@ -53,8 +74,16 @@ public class Dictionary {
         words.add(key);
     }
 
+    public void put(String key, String sentence) {
+        sample.put(key, sentence);
+    }
+
     public String getType() {
-        return this.type;
+        return type;
+    }
+
+    public String getClue(String word) {
+        return sample.get(word);
     }
 
     public int size() {
@@ -77,19 +106,34 @@ public class Dictionary {
         return this.type.substring(0, 1).toUpperCase() + this.type.substring(1);
     }
 
-    public void update(File f) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(f))) {
+    public void update(String type) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("dict/" + type + "Dict.ota"))) {
             for (Map.Entry<String, List<String>> entry : dict.entrySet()) {
                 writer.write(entry.getKey() + ": ");
 
                 writer.write(entry.getValue().get(0));
                 for (int i = 1; i < entry.getValue().size(); ++i) {
-                    writer.write(", " + entry.getValue().get(i));
+                    writer.write("; " + entry.getValue().get(i));
                 }
                 writer.newLine();
             }
         } catch (IOException e) {
-            System.err.println("Something gone wrong while updating file '" + f + "'");
+            System.err.println("Something gone wrong while updating file 'dict/" + type + "Dict.ota'");
+            e.printStackTrace();
+            System.exit(0);
+        }
+
+        if (type.equals("Main")) {
+            return;
+        }
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("sample/" + type + "Sample.ota"))) {
+            for (Map.Entry<String, String> entry : sample.entrySet()) {
+                writer.write(entry.getKey() + ": " + entry.getValue());
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            System.err.println("Something gone wrong while updating file 'sample/" + type + "Sample.ota'");
             e.printStackTrace();
             System.exit(0);
         }

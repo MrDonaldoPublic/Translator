@@ -19,7 +19,7 @@ public class FastScanner implements AutoCloseable {
     private String nextStr;
 
     // for matching part of word
-    private List<Character> patterns = List.of('\'', ' ', '\t', '.', '_', '/', '+', '~');
+    private List<Character> patterns = List.of('\'', ' ', '\t', '.', ',', '_', '/', '+', '~');
 
     public FastScanner() {
         this.input = System.in;
@@ -109,6 +109,17 @@ public class FastScanner implements AutoCloseable {
         return nextStr != null;
     }
 
+    public boolean hasNextNoLineSeparate() throws IOException {
+        if (nextStr != null) {
+            return true;
+        }
+
+        while (hasNext() && lineSeparate.contains(nextStr)) {
+            nextStr = getNextStr();
+        }
+        return hasNext();
+    }
+
     public String next() throws IOException {
         if (nextStr == null) {
             nextStr = getNextStr();
@@ -120,11 +131,25 @@ public class FastScanner implements AutoCloseable {
 
     public String nextNoLineSeparate() throws IOException {
         String res = next();
-        while (res != null && res.equals(lineSeparate)) {
+        while (res != null && lineSeparate.contains(res)) {
             res = next();
         }
 
         return res;
+    }
+
+    public String nextLine() throws IOException {
+        StringBuilder res = new StringBuilder(nextNoLineSeparate());
+        while (true) {
+            String currWord = next();
+            if (lineSeparate.contains(currWord)) {
+                break;
+            }
+
+            res.append(currWord);
+        }
+
+        return res.toString();
     }
 
     public void close() throws IOException {

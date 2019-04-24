@@ -51,11 +51,11 @@ class Program {
      * Initializes all dictionaries: main, noun, verb, adjective, adverb.
      */
     private void initializeDictionaries() {
-        dictionaries[0] = main = new Dictionary(new File(direction + "MainDict.ota"), "main");
-        dictionaries[1] = new Dictionary(new File(direction + "NounDict.ota"), "noun");
-        dictionaries[2] = new Dictionary(new File(direction + "VerbDict.ota"), "verb");
-        dictionaries[3] = new Dictionary(new File(direction + "AdjectiveDict.ota"), "adjective");
-        dictionaries[4] = new Dictionary(new File(direction + "AdverbDict.ota"), "adverb");
+        dictionaries[0] = main = new Dictionary("main");
+        dictionaries[1] = new Dictionary("noun");
+        dictionaries[2] = new Dictionary("verb");
+        dictionaries[3] = new Dictionary("adjective");
+        dictionaries[4] = new Dictionary("adverb");
 
         for (int i = 0; i < DICT_QTY; ++i) {
             String currName = dictionaries[i].getType();
@@ -168,6 +168,7 @@ class Program {
 
     /**
      * logs in to the system for save result of quiz mode
+     *
      * @param name given for log in.
      *             If there is no such name, then program
      *             will suggest to create new 'person'
@@ -233,7 +234,7 @@ class Program {
     private void help() {
         System.out.println("There are " + main.size() + " words in dictionary");
         System.out.println("=======PROGRAM-RESPONSIBLE COMMANDS LIST=======");
-        System.out.println("    case -: stop running this program");
+        System.out.println("    case -             : stop running this program");
         System.out.println("    case /q <number>   : move to quiz mode");
         System.out.println("    case /l <number>   : move to list mode");
         System.out.println("    case /e <word>     : move to edit mode");
@@ -306,101 +307,94 @@ class Program {
         System.out.println("Write something to contact with this program");
         help();
 
-        try {
-            boolean haveToRead = true;
-            while (haveToRead && onlineScanner.hasNext()) {
-                // allDictSize - size of all dictionaries
-                int allDictSize = 0;
-                for (int num = 1; num < DICT_QTY; ++num) {
-                    allDictSize += dictionaries[num].size();
-                }
-                allDictSizeB = new BigInteger(Integer.toString(allDictSize));
-
-                System.out.println("Please send query");
-
-                String query = getNextNotEmpty();
-                if (query.isEmpty()) {
-                    continue;
-                }
-                int pos = getSecondWordPos(query);
-                String first = query.substring(0, pos);
-
-                switch (first) {
-                    case "-":
-                        haveToRead = false;
-                        break;
-
-                    case "/q":
-                    case "/quiz":
-                    case "/l":
-                    case "/list":
-                        int qty = toNumber(query.substring(pos));
-                        if (qty <= -1) {
-                            System.err.println("Expected number after " + first);
-                        } else {
-                            if (first.startsWith("/q")) {
-                                quizMode(qty);
-                            } else {
-                                listMode(qty);
-                            }
-                        }
-                        break;
-
-                    case "/h":
-                    case "/help":
-                        help();
-                        break;
-
-                    case "/r":
-                    case "/rate":
-                        showRating();
-                        break;
-
-                    case "/e":
-                    case "/edit":
-                    case "/a":
-                    case "/add":
-                    case "/d":
-                    case "/del":
-                    case "/delete":
-                    case "/login":
-                        if (query.length() > first.length()) {
-                            String currWord = query.substring(pos).trim();
-                            if (query.startsWith("/e")) {
-                                editMode(currWord);
-                            } else if (query.startsWith("/a")) {
-                                addDict(currWord);
-                            } else if (query.startsWith("/login")) {
-                                login(currWord);
-                            } else {
-                                for (int num = 0; num < DICT_QTY; ++num) {
-                                    dictionaries[num].remove(currWord);
-                                }
-                                System.out.println("Successfully removed " + currWord + " from all dictionaries");
-                            }
-                            writeAllMeanings(currWord);
-                        } else {
-                            System.err.println("Expected word after " + first);
-                        }
-                        break;
-
-                    default:
-                        if (query.startsWith("/")) {
-                            System.err.println("Unknown command " + first);
-                            System.err.println("Input /h to see commands list");
-                        } else {
-                            if (main.get(query) == null) {
-                                addMode(query);
-                            }
-                            writeAllMeanings(query);
-                        }
-                }
+        boolean haveToRead = true;
+        while (haveToRead) {
+            // allDictSize - size of all dictionaries
+            int allDictSize = 0;
+            for (int num = 1; num < DICT_QTY; ++num) {
+                allDictSize += dictionaries[num].size();
             }
-        } catch (IOException e) {
-            // I don't know what's happen
-            System.err.println("Something gone wrong while waiting for query");
-            e.printStackTrace();
-            System.exit(0);
+            allDictSizeB = new BigInteger(Integer.toString(allDictSize));
+
+            System.out.println("Please send query");
+
+            String query = getNextNotEmpty();
+            if (query.isEmpty()) {
+                continue;
+            }
+            int pos = getSecondWordPos(query);
+            String first = query.substring(0, pos);
+
+            switch (first) {
+                case "-":
+                    haveToRead = false;
+                    break;
+
+                case "/q":
+                case "/quiz":
+                case "/l":
+                case "/list":
+                    int qty = toNumber(query.substring(pos));
+                    if (qty <= -1) {
+                        System.err.println("Expected number after " + first);
+                    } else {
+                        if (first.startsWith("/q")) {
+                            quizMode(qty);
+                        } else {
+                            listMode(qty);
+                        }
+                    }
+                    break;
+
+                case "/h":
+                case "/help":
+                    help();
+                    break;
+
+                case "/r":
+                case "/rate":
+                    showRating();
+                    break;
+
+                case "/e":
+                case "/edit":
+                case "/a":
+                case "/add":
+                case "/d":
+                case "/del":
+                case "/delete":
+                case "/login":
+                    if (query.length() > first.length()) {
+                        String currWord = query.substring(pos).trim();
+                        if (query.startsWith("/e")) {
+                            editMode(currWord);
+                        } else if (query.startsWith("/a")) {
+                            addDict(currWord);
+                        } else if (query.startsWith("/login")) {
+                            login(currWord);
+                        } else {
+                            for (int num = 0; num < DICT_QTY; ++num) {
+                                dictionaries[num].remove(currWord);
+                            }
+                            System.out.println("Successfully removed " + currWord + " from all dictionaries");
+                        }
+                        writeAllMeanings(currWord);
+                    } else {
+                        System.err.println("Expected word after " + first);
+                    }
+                    break;
+
+                default:
+                    if (query.startsWith("/")) {
+                        System.err.println("Unknown command " + first);
+                        System.err.println("Input /h to see commands list");
+                    } else {
+                        if (main.get(query) == null) {
+                            addMode(query);
+                        }
+                        writeAllMeanings(query);
+                    }
+            }
         }
     }
 
@@ -434,14 +428,27 @@ class Program {
             try {
                 answer = onlineScanner.nextNoLineSeparate().trim();
             } catch (IOException e) {
-                System.err.println("Scanner had broken at reading your query");
-                updateFiles();
-                System.exit(0);
-                return null;
+                return quit("Scanner had broken at reading your query", e);
             }
         } while (answer.isEmpty());
 
         return answer;
+    }
+
+    private String getNextLine() {
+        try {
+            return onlineScanner.nextLine();
+        } catch (IOException e) {
+            return quit("Scanner broke at reading text", e);
+        }
+    }
+
+    private String quit(String message, Exception e) {
+        System.err.println(message);
+        e.printStackTrace();
+        updateFiles();
+        System.exit(0);
+        return null;
     }
 
     /**
@@ -552,9 +559,10 @@ class Program {
         do {
             System.out.println("Input 'del all' to delete all meanings");
             System.out.println("      'edit' to change meanings");
+            System.out.println("      'text' to change sample text");
 
             answer = getNextNotEmpty();
-        } while (!(answer.equals("edit") || answer.equals("del all")));
+        } while (!(answer.equals("edit") || answer.equals("del all") || answer.equals("text")));
 
         switch (answer) {
             case "del all":
@@ -564,6 +572,11 @@ class Program {
             case "edit":
                 editMeanings(currDict, word);
                 break;
+
+            case "text":
+                System.out.println("Please input new sample text (- to input nothing)");
+                currDict.put(word, getNextLine());
+                System.out.println("Successfully put " + ("-".equals(currDict.getClue(word)) ? "nothing" : currDict.getClue(word)));
 
             default:
                 System.err.println("Found unknown command '" + answer + "'");
@@ -670,6 +683,15 @@ class Program {
 
         if (!meanings.isEmpty()) {
             dictionary.put(word, meanings);
+
+            System.out.println("Then please input example text (- to not input)");
+            try {
+                dictionary.put(word, onlineScanner.nextLine());
+            } catch (IOException e) {
+                System.err.println("Scanner broke at reading text");
+                e.printStackTrace();
+                System.exit(0);
+            }
         }
     }
 
@@ -728,6 +750,9 @@ class Program {
             if (guestAns.equals("-")) {
                 qty = i;
                 break;
+            } else if (guestAns.equals("/clue")) {
+                System.out.println(("-".equals(currDict.getClue(currWord)) ? "No clue" : currDict.getClue(currWord)));
+                guestAns = getNextNotEmpty();
             }
 
             if (!currDict.get(currWord).contains(guestAns)) {
@@ -752,8 +777,8 @@ class Program {
 
         System.out.format("It's about %.2f%%%n", correct * 100.0 / qty);
 
-        int prevRating = (int) Math.ceil((double) prevCorrect / prevTotal * 3800);
-        int currRating = (int) Math.ceil((double) currCorrect / currTotal * 3800);
+        int prevRating = (int) Math.ceil(prevCorrect * 3800.0 / prevTotal);
+        int currRating = (int) Math.ceil(currCorrect * 3800.0 / currTotal);
         if (prevRating > currRating) {
             System.out.println("You got " + (currRating - prevRating) + " to your rating...");
         } else {
@@ -785,8 +810,7 @@ class Program {
      */
     private void updateFiles() {
         for (int num = 0; num < DICT_QTY; ++num) {
-            String fileName = direction + dictionaries[num].getTypeHeadWord() + "Dict.ota";
-            dictionaries[num].update(new File(fileName));
+            dictionaries[num].update(dictionaries[num].getTypeHeadWord());
         }
 
         if (!username.equals("Anonymous")) {
@@ -799,7 +823,7 @@ class Program {
                 List<Object> statistics = entry.getValue();
                 writer.write(statistics.get(0).toString());
                 for (int i = 1; i < statistics.size(); ++i) {
-                    writer.write(", " + statistics.get(i).toString());
+                    writer.write("; " + statistics.get(i).toString());
                 }
 
                 writer.newLine();
