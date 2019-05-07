@@ -71,7 +71,6 @@ class Program {
         initializeDictionaries();
         readUsers();
         waitForQuery();
-        updateFiles();
     }
 
     /**
@@ -395,6 +394,8 @@ class Program {
                         writeAllMeanings(query);
                     }
             }
+
+            updateFiles();
         }
     }
 
@@ -574,9 +575,11 @@ class Program {
                 break;
 
             case "text":
+                System.out.println("Have '" + currDict.getClue(word) + "' as sample text");
                 System.out.println("Please input new sample text (- to input nothing)");
                 currDict.put(word, getNextLine());
-                System.out.println("Successfully put " + ("-".equals(currDict.getClue(word)) ? "nothing" : currDict.getClue(word)));
+                System.out.println("Successfully put '" + currDict.getClue(word) + "'");
+                break;
 
             default:
                 System.err.println("Found unknown command '" + answer + "'");
@@ -685,13 +688,7 @@ class Program {
             dictionary.put(word, meanings);
 
             System.out.println("Then please input example text (- to not input)");
-            try {
-                dictionary.put(word, onlineScanner.nextLine());
-            } catch (IOException e) {
-                System.err.println("Scanner broke at reading text");
-                e.printStackTrace();
-                System.exit(0);
-            }
+            dictionary.put(word, getNextLine());
         }
     }
 

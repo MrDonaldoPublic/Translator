@@ -74,8 +74,9 @@ public class Dictionary {
         words.add(key);
     }
 
-    public void put(String key, String sentence) {
-        sample.put(key, sentence);
+    public void put(String word, String sentence) {
+        char firstLetter = sentence.charAt(0);
+        sample.put(word, Character.toUpperCase(firstLetter) + sentence.substring(1));
     }
 
     public String getType() {
@@ -83,7 +84,11 @@ public class Dictionary {
     }
 
     public String getClue(String word) {
-        return sample.get(word);
+        String sentence = sample.get(word);
+        if ("-".equals(sentence)) {
+            return "nothing";
+        }
+        return sentence;
     }
 
     public int size() {
@@ -95,6 +100,7 @@ public class Dictionary {
     }
 
     public List<String> remove(String word) {
+        sample.remove(word);
         return dict.remove(word);
     }
 
